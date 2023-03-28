@@ -1,77 +1,56 @@
 module Debouncer exposing
-  ( Debounced
-  , wrap, unwrap
+    ( Debouncer
+    , Id
+    , Options
+    , cancel
+    , init
+    , update
+    , tryToApply
+    )
 
-  , Id, Delay(..)
-  , delay, performDelay
-  , tryToApply
-  )
 
-
+import Debouncer.Internal as D
 import Process
 import Task
 
 
-type Debounced a
-  = Debounced (State a)
+type Debouncer
+    = Debouncer D.Debouncer
 
 
-type alias State a =
-  { id : Int
-  , lastCommittedValue : Maybe a
-  , value : a
-  }
+init : Debouncer
+init =
+    Debouncer D.init
 
 
-wrap : a -> Debounced a
-wrap =
-  Debounced << State 0 Nothing
+type Id
+    = Id Int
 
 
-unwrap : Debounced a -> a
-unwrap (Debounced { value }) =
-  value
+type alias Options msg =
+    { millis : Int
+    , toMsg : Id -> msg
+    }
 
 
-type Id =
-  Id Int
-
-
-type Delay =
-  Delay Int Id
-
-
-delay : Int -> a -> Debounced a -> (Debounced a, Delay)
-delay millis value (Debounced state) =
-  let
-    newState =
-      { state
-      | id = state.id + 1
-      , value = value
-      }
-  in
-  ( Debounced newState
-  , Delay millis (Id newState.id)
-  )
-
-
-performDelay : (Id -> msg) -> Delay -> Cmd msg
-performDelay toMsg (Delay millis id) =
-  Process.sleep (toFloat millis)
-    |> Task.perform (always (toMsg id))
-
-
-tryToApply : Id -> (a -> b) -> Debounced a -> (Debounced a, Maybe b)
-tryToApply (Id incomingId) f (Debounced state as debounced) =
-  let
-    isCommittable =
-      incomingId == state.id && Just state.value /= state.lastCommittedValue
-  in
-  if isCommittable then
-    ( Debounced { state | lastCommittedValue = Just state.value }
-    , Just (f state.value)
+update : Options msg -> Debouncer -> (Debouncer, Cmd msg)
+update { millis, toMsg } (Debouncer debouncer) =
+    let
+        newDebouncer =
+            D.update debouncer
+    in
+    ( Debouncer newDebouncer
+    , Process.sleep (toFloat millis)
+        |> Task.perform (always (toMsg (Id newDebouncer.id)))
     )
-  else
-    ( debounced
-    , Nothing
-    )
+
+
+cancel : Debouncer -> Debouncer
+cancel (Debouncer debouncer) =
+    Debouncer (D.cancel debouncer)
+
+
+tryToApply : -> Id -> (() -> a) -> Debouncer -> ( Debouncer, Maybe a )
+tryToApply (Id incomingId) f (Debouncer debouncer) =
+    D.tryToApply incomingId f debouncer
+        |> Tuple.mapFirst Debouncer
