@@ -29,19 +29,19 @@ type Id
 
 type alias Options msg =
     { millis : Int
-    , toMsg : Id -> msg
+    , onReady : Id -> msg
     }
 
 
 update : Options msg -> Debouncer -> (Debouncer, Cmd msg)
-update { millis, toMsg } (Debouncer debouncer) =
+update { millis, onReady } (Debouncer debouncer) =
     let
         newDebouncer =
             D.update debouncer
     in
     ( Debouncer newDebouncer
     , Process.sleep (toFloat millis)
-        |> Task.perform (always (toMsg (Id newDebouncer.id)))
+        |> Task.perform (always (onReady (Id newDebouncer.id)))
     )
 
 
@@ -50,7 +50,6 @@ cancel (Debouncer debouncer) =
     Debouncer (D.cancel debouncer)
 
 
-tryToApply : -> Id -> (() -> a) -> Debouncer -> ( Debouncer, Maybe a )
+tryToApply : Id -> (() -> a) -> Debouncer -> Maybe a
 tryToApply (Id incomingId) f (Debouncer debouncer) =
     D.tryToApply incomingId f debouncer
-        |> Tuple.mapFirst Debouncer

@@ -27,14 +27,10 @@ cancel =
     update
 
 
-tryToApply : Int -> (() -> a) -> Debouncer -> ( Debouncer, Maybe a )
+tryToApply : Int -> (() -> a) -> Debouncer -> Maybe a
 tryToApply incomingId f debouncer =
     if incomingId == debouncer.id then
-        ( debouncer
-        , Just (f ())
-        )
+        Just (f ())
 
     else
-        ( debouncer
-        , Nothing
-        )
+        Nothing

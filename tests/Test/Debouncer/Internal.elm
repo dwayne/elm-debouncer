@@ -50,7 +50,6 @@ tryToApplySuite =
         let
             result =
                 Debouncer.tryToApply d2.id (always 42) d2
-                    |> Tuple.second
         in
         [ test "it applies the function" <|
             \_ ->
@@ -61,7 +60,6 @@ tryToApplySuite =
         let
             result =
                 Debouncer.tryToApply d1.id (always 42) d2
-                    |> Tuple.second
         in
         [ test "it does not apply the function" <|
             \_ ->
