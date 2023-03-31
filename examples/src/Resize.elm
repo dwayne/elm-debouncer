@@ -3,7 +3,7 @@ module Resize exposing (main)
 
 import Browser as B
 import Browser.Events as BE
-import Debouncer exposing (Debouncer)
+import Debouncer.Leading as Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
 
@@ -47,7 +47,7 @@ init _ =
 type Msg
     = ResizedWindow Int Int
     | Ready Event
-    | ChangedDebouncer (Debouncer.Msg Msg)
+    | ChangedDebouncer Debouncer.Msg
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -79,8 +79,8 @@ update msg model =
             )
 
         ChangedDebouncer debouncerMsg ->
-            ( model
-            , Debouncer.update debouncerMsg model.debouncer
+            ( { model | debouncer = Debouncer.update debouncerMsg model.debouncer }
+            , Cmd.none
             )
 
 

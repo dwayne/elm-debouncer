@@ -11,6 +11,9 @@ module Debouncer exposing
     )
 
 
+-- NOTE: This is a trailing edge debouncer.
+
+
 import Process
 import Task
 
