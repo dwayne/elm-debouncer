@@ -24,7 +24,7 @@ main =
 type alias Model =
     { raw : List Event
     , debounced : List Event
-    , debouncer : Debouncer (Event, List Event) (List Event)
+    , debouncer : Debouncer
     }
 
 
@@ -36,11 +36,7 @@ type alias Event =
 
 init : () -> (Model, Cmd Msg)
 init _ =
-    let
-        debouncer =
-            Debouncer.debounce (\(event, events) -> event :: events) 400
-    in
-    ( Model [] [] debouncer
+    ( Model [] [] Debouncer.init
     , Cmd.none
     )
 
@@ -50,8 +46,8 @@ init _ =
 
 type Msg
     = ResizedWindow Int Int
-    | NewDebounced (List Event)
-    | ChangedDebouncer (Debouncer.Msg (Event, List Event) (List Event) Msg)
+    | Ready Event
+    | ChangedDebouncer (Debouncer.Msg Msg)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -63,25 +59,28 @@ update msg model =
                     Event width height
 
                 ( debouncer, cmd ) =
-                    Debouncer.apply
-                        { onResult = NewDebounced
-                        , fromMsg = ChangedDebouncer
+                    Debouncer.debounce
+                        { wait = 400
+                        , onReady = Ready event
+                        , onChange = ChangedDebouncer
                         }
-                        (event, model.debounced)
                         model.debouncer
             in
             ( { model | raw = event :: model.raw, debouncer = debouncer }
             , cmd
             )
 
-        NewDebounced debounced ->
-            ( { model | debounced = debounced }
+        Ready event ->
+            --
+            -- Here is where you do the work.
+            --
+            ( { model | debounced = event :: model.debounced }
             , Cmd.none
             )
 
         ChangedDebouncer debouncerMsg ->
             ( model
-            , Debouncer.update ChangedDebouncer debouncerMsg model.debouncer
+            , Debouncer.update debouncerMsg model.debouncer
             )
 
 

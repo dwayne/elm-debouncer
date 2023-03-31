@@ -2,7 +2,7 @@ module Debouncer.Internal exposing
     ( Debouncer
     , cancel
     , init
-    , tryToApply
+    , isReady
     , update
     )
 
@@ -27,10 +27,6 @@ cancel =
     update
 
 
-tryToApply : Int -> (a -> b) -> a -> Debouncer -> Maybe b
-tryToApply incomingId f arg debouncer =
-    if incomingId == debouncer.id then
-        Just (f arg)
-
-    else
-        Nothing
+isReady : Int -> Debouncer -> Bool
+isReady incomingId { id } =
+    incomingId == id

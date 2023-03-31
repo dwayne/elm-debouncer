@@ -1,68 +1,67 @@
 module Debouncer exposing
     ( Debouncer
-    , debounce
+    , init
     , cancel
 
-    , ApplyOptions
-    , apply
+    , Options
+    , debounce
 
     , Msg
     , update
     )
 
 
-import Debouncer.Internal as D
 import Process
 import Task
 
 
-type Debouncer a b
-    = Debouncer D.Debouncer (a -> b) Int
+type Debouncer
+    = Debouncer Int
 
 
-debounce : (a -> b) -> Int -> Debouncer a b
-debounce =
-    Debouncer D.init
+init : Debouncer
+init =
+    Debouncer 0
 
 
-cancel : Debouncer a b -> Debouncer a b
-cancel (Debouncer debouncer f wait) =
-    Debouncer (D.cancel debouncer) f wait
+cancel : Debouncer -> Debouncer
+cancel (Debouncer id) =
+    Debouncer (id + 1)
 
 
-type alias ApplyOptions a b msg =
-    { onResult : b -> msg
-    , fromMsg : Msg a b msg -> msg
+type alias Options msg =
+    { wait : Int
+    , onReady : msg
+    , onChange : Msg msg -> msg
     }
 
 
-apply : ApplyOptions a b msg -> a -> Debouncer a b -> (Debouncer a b, Cmd msg)
-apply { onResult, fromMsg } arg (Debouncer debouncer f wait) =
+debounce : Options msg -> Debouncer -> (Debouncer, Cmd msg)
+debounce { wait, onReady, onChange } (Debouncer id) =
     let
-        newDebouncer =
-            D.update debouncer
+        newId =
+            id + 1
     in
-    ( Debouncer newDebouncer f wait
+    ( Debouncer newId
     , Process.sleep (toFloat wait)
-        |> Task.perform (always (Ready newDebouncer.id arg onResult))
-        |> Cmd.map fromMsg
+        |> Task.perform (always (WakeUp newId onReady))
+        |> Cmd.map onChange
     )
 
 
-type Msg a b msg
-    = Ready Int a (b -> msg)
+type Msg msg
+    = WakeUp Int msg
 
 
-update : (Msg a b msg -> msg) -> Msg a b msg -> Debouncer a b -> Cmd msg
-update fromMsg msg (Debouncer debouncer f wait) =
+update : Msg msg -> Debouncer -> Cmd msg
+update msg (Debouncer id) =
     case msg of
-        Ready id arg onResult ->
-            case D.tryToApply id f arg debouncer of
-                Just result ->
-                    dispatch (onResult result)
+        WakeUp incomingId onReady ->
+            if incomingId == id then
+                dispatch onReady
 
-                Nothing ->
-                    Cmd.none
+            else
+                Cmd.none
 
 
 dispatch : msg -> Cmd msg
