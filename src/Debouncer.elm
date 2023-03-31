@@ -1,11 +1,13 @@
 module Debouncer exposing
     ( Debouncer
-    , Id
-    , Options
+    , debounce
     , cancel
-    , init
+
+    , ApplyOptions
+    , apply
+
+    , Msg
     , update
-    , tryToApply
     )
 
 
@@ -14,42 +16,56 @@ import Process
 import Task
 
 
-type Debouncer
-    = Debouncer D.Debouncer
+type Debouncer a b
+    = Debouncer D.Debouncer (a -> b) Int
 
 
-init : Debouncer
-init =
+debounce : (a -> b) -> Int -> Debouncer a b
+debounce =
     Debouncer D.init
 
 
-type Id
-    = Id Int
+cancel : Debouncer a b -> Debouncer a b
+cancel (Debouncer debouncer f wait) =
+    Debouncer (D.cancel debouncer) f wait
 
 
-type alias Options msg =
-    { millis : Int
-    , onReady : Id -> msg
+type alias ApplyOptions a b msg =
+    { onResult : b -> msg
+    , fromMsg : Msg a b msg -> msg
     }
 
 
-update : Options msg -> Debouncer -> (Debouncer, Cmd msg)
-update { millis, onReady } (Debouncer debouncer) =
+apply : ApplyOptions a b msg -> a -> Debouncer a b -> (Debouncer a b, Cmd msg)
+apply { onResult, fromMsg } arg (Debouncer debouncer f wait) =
     let
         newDebouncer =
             D.update debouncer
     in
-    ( Debouncer newDebouncer
-    , Process.sleep (toFloat millis)
-        |> Task.perform (always (onReady (Id newDebouncer.id)))
+    ( Debouncer newDebouncer f wait
+    , Process.sleep (toFloat wait)
+        |> Task.perform (always (Ready newDebouncer.id arg onResult))
+        |> Cmd.map fromMsg
     )
 
 
-cancel : Debouncer -> Debouncer
-cancel (Debouncer debouncer) =
-    Debouncer (D.cancel debouncer)
+type Msg a b msg
+    = Ready Int a (b -> msg)
 
 
-tryToApply : Id -> (() -> a) -> Debouncer -> Maybe a
-tryToApply (Id incomingId) f (Debouncer debouncer) =
-    D.tryToApply incomingId f debouncer
+update : (Msg a b msg -> msg) -> Msg a b msg -> Debouncer a b -> Cmd msg
+update fromMsg msg (Debouncer debouncer f wait) =
+    case msg of
+        Ready id arg onResult ->
+            case D.tryToApply id f arg debouncer of
+                Just result ->
+                    dispatch (onResult result)
+
+                Nothing ->
+                    Cmd.none
+
+
+dispatch : msg -> Cmd msg
+dispatch msg =
+    Task.succeed msg
+        |> Task.perform (always msg)

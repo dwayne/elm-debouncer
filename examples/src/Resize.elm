@@ -24,7 +24,7 @@ main =
 type alias Model =
     { raw : List Event
     , debounced : List Event
-    , debouncer : Debouncer
+    , debouncer : Debouncer (Event, List Event) (List Event)
     }
 
 
@@ -36,7 +36,11 @@ type alias Event =
 
 init : () -> (Model, Cmd Msg)
 init _ =
-    ( Model [] [] Debouncer.init
+    let
+        debouncer =
+            Debouncer.debounce (\(event, events) -> event :: events) 400
+    in
+    ( Model [] [] debouncer
     , Cmd.none
     )
 
@@ -46,7 +50,8 @@ init _ =
 
 type Msg
     = ResizedWindow Int Int
-    | Ready Event Debouncer.Id
+    | NewDebounced (List Event)
+    | ChangedDebouncer (Debouncer.Msg (Event, List Event) (List Event) Msg)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -58,32 +63,26 @@ update msg model =
                     Event width height
 
                 ( debouncer, cmd ) =
-                    Debouncer.update
-                        { millis = 400
-                        , onReady = Ready event
+                    Debouncer.apply
+                        { onResult = NewDebounced
+                        , fromMsg = ChangedDebouncer
                         }
+                        (event, model.debounced)
                         model.debouncer
             in
             ( { model | raw = event :: model.raw, debouncer = debouncer }
             , cmd
             )
 
-        Ready event id ->
-            let
-                -- This is the function we want to debounce.
-                f =
-                    \_ -> event :: model.debounced
-            in
-            case Debouncer.tryToApply id f model.debouncer of
-                Nothing ->
-                    ( model
-                    , Cmd.none
-                    )
+        NewDebounced debounced ->
+            ( { model | debounced = debounced }
+            , Cmd.none
+            )
 
-                Just debounced ->
-                    ( { model | debounced = debounced }
-                    , Cmd.none
-                    )
+        ChangedDebouncer debouncerMsg ->
+            ( model
+            , Debouncer.update ChangedDebouncer debouncerMsg model.debouncer
+            )
 
 
 -- SUBSCRIPTIONS
