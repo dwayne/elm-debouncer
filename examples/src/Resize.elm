@@ -3,7 +3,7 @@ module Resize exposing (main)
 
 import Browser as B
 import Browser.Events as BE
-import Debouncer.Leading as Debouncer exposing (Debouncer)
+import Throttler exposing (Throttler)
 import Html as H
 import Html.Attributes as HA
 
@@ -23,8 +23,8 @@ main =
 
 type alias Model =
     { raw : List Event
-    , debounced : List Event
-    , debouncer : Debouncer
+    , throttled : List Event
+    , throttler : Throttler
     }
 
 
@@ -36,7 +36,7 @@ type alias Event =
 
 init : () -> (Model, Cmd Msg)
 init _ =
-    ( Model [] [] Debouncer.init
+    ( Model [] [] Throttler.init
     , Cmd.none
     )
 
@@ -47,7 +47,7 @@ init _ =
 type Msg
     = ResizedWindow Int Int
     | Ready Event
-    | ChangedDebouncer Debouncer.Msg
+    | ChangedThrottler (Throttler.Msg Msg)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -58,15 +58,15 @@ update msg model =
                 event =
                     Event width height
 
-                ( debouncer, cmd ) =
-                    Debouncer.debounce
+                ( throttler, cmd ) =
+                    Throttler.throttle
                         { wait = 400
                         , onReady = Ready event
-                        , onChange = ChangedDebouncer
+                        , onChange = ChangedThrottler
                         }
-                        model.debouncer
+                        model.throttler
             in
-            ( { model | raw = event :: model.raw, debouncer = debouncer }
+            ( { model | raw = event :: model.raw, throttler = throttler }
             , cmd
             )
 
@@ -74,13 +74,17 @@ update msg model =
             --
             -- Here is where you do the work.
             --
-            ( { model | debounced = event :: model.debounced }
+            ( { model | throttled = event :: model.throttled }
             , Cmd.none
             )
 
-        ChangedDebouncer debouncerMsg ->
-            ( { model | debouncer = Debouncer.update debouncerMsg model.debouncer }
-            , Cmd.none
+        ChangedThrottler throttlerMsg ->
+            let
+                ( throttler, cmd ) =
+                    Throttler.update throttlerMsg model.throttler
+            in
+            ( { model | throttler = throttler }
+            , cmd
             )
 
 
@@ -96,18 +100,18 @@ subscriptions _ =
 
 
 view : Model -> H.Html msg
-view { raw, debounced } =
-    viewFrame { raw = raw, debounced = debounced }
+view { raw, throttled } =
+    viewFrame { raw = raw, throttled = throttled }
 
 
-viewFrame : { raw : List Event, debounced : List Event } -> H.Html msg
-viewFrame { raw, debounced } =
+viewFrame : { raw : List Event, throttled : List Event } -> H.Html msg
+viewFrame { raw, throttled } =
     H.div [ HA.class "frame" ]
         [ H.div [ HA.class "frame__item" ]
             [ viewPanel "Raw resize events" raw
             ]
         , H.div [ HA.class "frame__item" ]
-            [ viewPanel "Debounced resize events" debounced
+            [ viewPanel "Throttled resize events" throttled
             ]
         ]
 
