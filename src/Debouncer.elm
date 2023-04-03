@@ -140,7 +140,8 @@ call { onInvoke, onChange } arg (Debouncer config state) =
         }
     , Cmd.batch
         [ if config.invokeOnLeading && numCalls == 1 then
-            dispatch (onInvoke arg)
+            Debug.log "invoked on leading" <|
+                dispatch (onInvoke arg)
           else
             Cmd.none
         , sleep config.wait (WaitTimerExpired newWaitId onInvoke)
@@ -166,14 +167,16 @@ update msg (Debouncer config state as debouncer) =
     case msg of
         WaitTimerExpired incomingId onInvoke ->
             if incomingId == state.waitId then
-                ( Debouncer config (clearState state)
-                , if shouldInvoke config.invokeOnTrailing config.invokeOnLeading state.numCalls then
-                      state.lastArg
-                        |> Maybe.map (dispatch << onInvoke)
-                        |> Maybe.withDefault Cmd.none
-                  else
-                      Cmd.none
-                )
+                Debug.log "cleared state" <|
+                    ( Debouncer config (clearState state)
+                    , if shouldInvoke config.invokeOnTrailing config.invokeOnLeading state.numCalls then
+                          Debug.log "invoked on wait trailing"
+                              (state.lastArg
+                                |> Maybe.map (dispatch << onInvoke)
+                                |> Maybe.withDefault Cmd.none)
+                      else
+                          Cmd.none
+                    )
 
             else
                 ( debouncer
@@ -184,14 +187,15 @@ update msg (Debouncer config state as debouncer) =
             if incomingId == state.maxWaitId then
                 ( Debouncer config
                     { state
-                    | waitId = state.waitId + 1
-                    , maxWaitId = state.maxWaitId + 1
+                    | maxWaitId = state.maxWaitId + 1
+                    , numCalls = 1
                     , lastArg = Nothing
                     }
                 , if shouldInvoke config.invokeOnTrailing config.invokeOnLeading state.numCalls then
-                      state.lastArg
-                        |> Maybe.map (dispatch << onInvoke)
-                        |> Maybe.withDefault Cmd.none
+                      Debug.log "invoked on maxWait trailing" <|
+                          (state.lastArg
+                            |> Maybe.map (dispatch << onInvoke)
+                            |> Maybe.withDefault Cmd.none)
                   else
                       Cmd.none
                 )
@@ -200,6 +204,12 @@ update msg (Debouncer config state as debouncer) =
                 ( debouncer
                 , Cmd.none
                 )
+
+
+-- N.B. Another bug I need to fix has to do with the maxWait time interval.
+-- Currently, we only set the maxWait timer when debounce is called. So some
+-- time could elapse between invocation and setting the timer. We should set
+-- a new maxWait timer when an invocation occurs within MaxWaitTimerExpired.
 
 
 shouldInvoke : Bool -> Bool -> Int -> Bool
