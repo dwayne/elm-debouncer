@@ -38,11 +38,7 @@ init : () -> (Model, Cmd Msg)
 init _ =
     let
         debouncer =
-            Debouncer.custom
-                { strategy = Debouncer.Trailing
-                , wait = 500
-                , maxWait = Just 1000
-                }
+            Debouncer.throttle 1000
     in
     ( Model [] [] debouncer
     , Cmd.none
@@ -54,7 +50,7 @@ init _ =
 
 type Msg
     = ResizedWindow Int Int
-    | Ready Event
+    | Invoke Event
     | ChangedDebouncer (Debouncer.Msg Msg Event)
 
 
@@ -67,8 +63,8 @@ update msg model =
                     Event width height
 
                 ( debouncer, cmd ) =
-                    Debouncer.debounce
-                        { onReady = Ready
+                    Debouncer.call
+                        { onInvoke = Invoke
                         , onChange = ChangedDebouncer
                         }
                         event
@@ -78,7 +74,7 @@ update msg model =
             , cmd
             )
 
-        Ready event ->
+        Invoke event ->
             --
             -- Here is where you do the work.
             --
