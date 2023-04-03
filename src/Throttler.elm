@@ -15,53 +15,82 @@ import Process
 import Task
 
 
-type Throttler
-    = Throttler Int Bool
+type Throttler a
+    = Throttler
+        { id : Int
+        , isWaiting : Bool
+        , lastArg : Maybe a
+        }
 
 
-init : Throttler
+init : Throttler a
 init =
-    Throttler 0 False
+    Throttler
+        { id = 0
+        , isWaiting = False
+        , lastArg = Nothing
+        }
 
 
-cancel : Throttler -> Throttler
-cancel (Throttler id _) =
-    Throttler (id + 1) False
+cancel : Throttler a -> Throttler a
+cancel (Throttler { id }) =
+    Throttler
+        { id = id + 1
+        , isWaiting = False
+        , lastArg = Nothing
+        }
 
 
-type alias Options msg =
+type alias Options msg a =
     { wait : Int
-    , onReady : msg
-    , onChange : Msg msg -> msg
+    , onReady : a -> msg
+    , onChange : Msg msg a -> msg
     }
 
 
-throttle : Options msg -> Throttler -> (Throttler, Cmd msg)
-throttle { wait, onReady, onChange } (Throttler id isWaiting as throttler) =
+throttle : Options msg a -> a -> Throttler a -> (Throttler a, Cmd msg)
+throttle { wait, onReady, onChange } args (Throttler { id, isWaiting, lastArg }) =
     if isWaiting then
-        ( throttler
+        ( Throttler
+            { id = id
+            , isWaiting = isWaiting
+            , lastArg = Just args
+            }
         , Cmd.none
         )
 
     else
-        ( Throttler id True
+        ( Throttler
+            { id = id
+            , isWaiting = True
+            , lastArg = Just args
+            }
         , Process.sleep (toFloat wait)
             |> Task.perform (always (TimerExpired id onReady))
             |> Cmd.map onChange
         )
 
 
-type Msg msg
-    = TimerExpired Int msg
+type Msg msg a
+    = TimerExpired Int (a -> msg)
 
 
-update : Msg msg -> Throttler -> (Throttler, Cmd msg)
-update msg (Throttler id isWaiting as throttler) =
+update : Msg msg a -> Throttler a -> (Throttler a, Cmd msg)
+update msg (Throttler { id, isWaiting, lastArg } as throttler) =
     case msg of
         TimerExpired incomingId onReady ->
             if incomingId == id && isWaiting then
-                ( Throttler (id + 1) False
-                , dispatch onReady
+                ( Throttler
+                    { id = id + 1
+                    , isWaiting = False
+                    , lastArg = Nothing
+                    }
+                , case lastArg of
+                    Just arg ->
+                        dispatch (onReady arg)
+
+                    Nothing ->
+                        Cmd.none
                 )
 
             else

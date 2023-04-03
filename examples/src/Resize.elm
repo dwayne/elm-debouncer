@@ -24,7 +24,7 @@ main =
 type alias Model =
     { raw : List Event
     , throttled : List Event
-    , throttler : Throttler
+    , throttler : Throttler Event
     }
 
 
@@ -47,7 +47,7 @@ init _ =
 type Msg
     = ResizedWindow Int Int
     | Ready Event
-    | ChangedThrottler (Throttler.Msg Msg)
+    | ChangedThrottler (Throttler.Msg Msg Event)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -60,10 +60,11 @@ update msg model =
 
                 ( throttler, cmd ) =
                     Throttler.throttle
-                        { wait = 400
-                        , onReady = Ready event
+                        { wait = 5000
+                        , onReady = Ready
                         , onChange = ChangedThrottler
                         }
+                        event
                         model.throttler
             in
             ( { model | raw = event :: model.raw, throttler = throttler }
