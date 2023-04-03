@@ -5,7 +5,6 @@ pkgs.mkShell {
   packages = [
     pkgs.elmPackages.elm
     pkgs.elmPackages.elm-format
-    pkgs.elmPackages.elm-test
   ];
 
   shellHook =

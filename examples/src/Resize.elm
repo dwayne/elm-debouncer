@@ -1,6 +1,5 @@
 module Resize exposing (main)
 
-
 import Browser as B
 import Browser.Events as BE
 import Debouncer exposing (Debouncer)
@@ -16,6 +15,7 @@ main =
         , update = update
         , subscriptions = subscriptions
         }
+
 
 
 -- MODEL
@@ -34,15 +34,16 @@ type alias Event =
     }
 
 
-init : () -> (Model, Cmd Msg)
+init : () -> ( Model, Cmd Msg )
 init _ =
     let
         debouncer =
-            Debouncer.throttle 400
+            Debouncer.trailing 400
     in
     ( Model [] [] debouncer
     , Cmd.none
     )
+
 
 
 -- UPDATE
@@ -54,7 +55,7 @@ type Msg
     | ChangedDebouncer (Debouncer.Msg Msg Event)
 
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ResizedWindow width height ->
@@ -95,12 +96,14 @@ update msg model =
             )
 
 
+
 -- SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     BE.onResize ResizedWindow
+
 
 
 -- VIEW
@@ -126,7 +129,8 @@ viewFrame { raw, debounced } =
 viewPanel : String -> List Event -> H.Html msg
 viewPanel title events =
     H.div [ HA.class "panel" ] <|
-        H.h1 [] [ H.text title ] :: List.map viewEvent events
+        H.h1 [] [ H.text title ]
+            :: List.map viewEvent events
 
 
 viewEvent : Event -> H.Html msg

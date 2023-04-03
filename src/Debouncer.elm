@@ -1,19 +1,16 @@
 module Debouncer exposing
-    ( Debouncer
-    , trailing, leading, throttle
-
-    , Config
-    , debounce
-
-    , cancel
-
+    ( Config
+    , Debouncer
+    , Msg
     , Options
     , call
-
-    , Msg
+    , cancel
+    , debounce
+    , leading
+    , throttle
+    , trailing
     , update
     )
-
 
 import Process
 import Task
@@ -112,7 +109,7 @@ type alias Options msg a =
     }
 
 
-call : Options msg a -> a -> Debouncer a -> (Debouncer a, Cmd msg)
+call : Options msg a -> a -> Debouncer a -> ( Debouncer a, Cmd msg )
 call { onReady, onChange } arg (Debouncer config state) =
     let
         newWaitId =
@@ -123,20 +120,20 @@ call { onReady, onChange } arg (Debouncer config state) =
     in
     ( Debouncer config
         { state
-        | waitId = newWaitId
-        , numCalls = numCalls
-        , lastArg = Just arg
+            | waitId = newWaitId
+            , numCalls = numCalls
+            , lastArg = Just arg
         }
     , Cmd.batch
         [ if config.invokeOnLeading && numCalls == 1 then
-            Debug.log "dispatch onReady on leading edge" <|
-                dispatch (onReady arg)
+            dispatch (onReady arg)
+
           else
             Cmd.none
         , sleep config.wait (WaitTimerExpired newWaitId onReady)
             |> Cmd.map onChange
-        , case (config.maxWait, state.lastArg) of
-            (Just maxWait, Nothing) ->
+        , case ( config.maxWait, state.lastArg ) of
+            ( Just maxWait, Nothing ) ->
                 sleep maxWait (MaxWaitTimerExpired state.maxWaitId onReady)
                     |> Cmd.map onChange
 
@@ -151,26 +148,25 @@ type Msg msg a
     | MaxWaitTimerExpired Int (a -> msg)
 
 
-update : (Msg msg a -> msg) -> Msg msg a -> Debouncer a -> (Debouncer a, Cmd msg)
-update onChange msg (Debouncer config state as debouncer) =
+update : (Msg msg a -> msg) -> Msg msg a -> Debouncer a -> ( Debouncer a, Cmd msg )
+update onChange msg ((Debouncer config state) as debouncer) =
     case msg of
         WaitTimerExpired incomingId onReady ->
             if incomingId == state.waitId then
-                Debug.log "clear state" <|
-                    ( Debouncer config (clearState state)
-                    , let
-                        shouldInvoke =
-                            config.invokeOnTrailing &&
-                                ((config.invokeOnLeading && state.numCalls > 1) || not config.invokeOnLeading)
-                      in
-                      if shouldInvoke then
-                          Debug.log "dispatch onReady on trailing edge"
-                              (state.lastArg
-                                |> Maybe.map (dispatch << onReady)
-                                |> Maybe.withDefault Cmd.none)
-                      else
-                          Cmd.none
-                    )
+                ( Debouncer config (clearState state)
+                , let
+                    shouldInvoke =
+                        config.invokeOnTrailing
+                            && ((config.invokeOnLeading && state.numCalls > 1) || not config.invokeOnLeading)
+                  in
+                  if shouldInvoke then
+                    state.lastArg
+                        |> Maybe.map (dispatch << onReady)
+                        |> Maybe.withDefault Cmd.none
+
+                  else
+                    Cmd.none
+                )
 
             else
                 ( debouncer
@@ -185,25 +181,25 @@ update onChange msg (Debouncer config state as debouncer) =
                 in
                 ( Debouncer config
                     { state
-                    | maxWaitId = newMaxWaitId
-                    , numCalls = 1
+                        | maxWaitId = newMaxWaitId
+                        , numCalls = 1
                     }
                 , if state.numCalls > 1 then
-                      Debug.log "dispatch onReady when maxWait timer expires" <|
-                          Cmd.batch
-                            [ state.lastArg
-                                  |> Maybe.map (dispatch << onReady)
-                                  |> Maybe.withDefault Cmd.none
-                            , case config.maxWait of
-                                Just maxWait ->
-                                    sleep maxWait (MaxWaitTimerExpired newMaxWaitId onReady)
-                                        |> Cmd.map onChange
+                    Cmd.batch
+                        [ state.lastArg
+                            |> Maybe.map (dispatch << onReady)
+                            |> Maybe.withDefault Cmd.none
+                        , case config.maxWait of
+                            Just maxWait ->
+                                sleep maxWait (MaxWaitTimerExpired newMaxWaitId onReady)
+                                    |> Cmd.map onChange
 
-                                Nothing ->
-                                    Cmd.none
-                            ]
+                            Nothing ->
+                                Cmd.none
+                        ]
+
                   else
-                      Cmd.none
+                    Cmd.none
                 )
 
             else
