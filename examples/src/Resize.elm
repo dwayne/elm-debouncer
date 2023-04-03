@@ -38,7 +38,7 @@ init : () -> (Model, Cmd Msg)
 init _ =
     let
         debouncer =
-            Debouncer.throttle 1000
+            Debouncer.throttle 400
     in
     ( Model [] [] debouncer
     , Cmd.none
@@ -50,7 +50,7 @@ init _ =
 
 type Msg
     = ResizedWindow Int Int
-    | Invoke Event
+    | ReadyToInvoke Event
     | ChangedDebouncer (Debouncer.Msg Msg Event)
 
 
@@ -64,7 +64,7 @@ update msg model =
 
                 ( debouncer, cmd ) =
                     Debouncer.call
-                        { onInvoke = Invoke
+                        { onReady = ReadyToInvoke
                         , onChange = ChangedDebouncer
                         }
                         event
@@ -74,7 +74,7 @@ update msg model =
             , cmd
             )
 
-        Invoke event ->
+        ReadyToInvoke event ->
             --
             -- Here is where you do the work.
             --
@@ -85,7 +85,10 @@ update msg model =
         ChangedDebouncer debouncerMsg ->
             let
                 ( debouncer, cmd ) =
-                    Debouncer.update debouncerMsg model.debouncer
+                    Debouncer.update
+                        ChangedDebouncer
+                        debouncerMsg
+                        model.debouncer
             in
             ( { model | debouncer = debouncer }
             , cmd
