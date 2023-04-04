@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Infinite Scroll</title>
+    <style>
+      body {
+        box-sizing: border-box;
+
+        margin: 0;
+        padding: 0;
+
+        height: 100vh;
+
+        background: #444;
+        color: #fff;
+      }
+
+      .content {
+        box-sizing: border-box;
+
+        padding: 20px;
+
+        height: 100%;
+        overflow-y: scroll;
+      }
+
+      .block {
+        box-sizing: border-box;
+
+        margin-bottom: 50px;
+        border: 4px solid #fff;
+        padding: 20px;
+
+        width: 100%;
+        height: 180px;
+
+        background: #333;
+      }
+
+      .block--1 {
+        border-color: #9bffbb;
+      }
+
+      .block--2 {
+        border-color: #b9c6ff;
+      }
+
+      .block--3 {
+        border-color: #ffa3d8;
+      }
+
+      .block--4 {
+        border-color: #ff8e9b;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="infiniteScroll"></div>
+    <script src="/infiniteScroll.js"></script>
+    <script>
+      Elm.InfiniteScroll.init({
+        node: document.getElementById('infiniteScroll')
+      });
+    </script>
+  </body>
+</html>
