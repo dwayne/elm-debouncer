@@ -1,5 +1,8 @@
 module Resize exposing (main)
 
+-- This example is based on
+-- https://css-tricks.com/debouncing-throttling-explained-examples/#aa-resize-example.
+
 import Browser as B
 import Browser.Events as BE
 import Debouncer exposing (Debouncer)
