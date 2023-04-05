@@ -1,0 +1,73 @@
+.events {
+  --event-pending-top: 13px;
+  --event-pending-border-bottom: 4px;
+  --event-height: calc(var(--event-pending-top) + var(--event-pending-border-bottom));
+
+  height: calc(2 * var(--event-height));
+
+  display: flex;
+  flex-direction: row;
+}
+
+.events__event {
+  width: 6px;
+  height: var(--event-height);
+
+  flex-shrink: 0;
+
+  border-right: 1px solid #111;
+}
+
+.events__event:last-of-type {
+  border: 2px solid #000;
+  border-bottom: var(--event-pending-border-bottom) solid #aaa;
+  border-top: 0px;
+
+  position: relative;
+  top: var(--event-pending-top);
+  left: -2px;
+}
+
+.events__event--color0 {
+  background-color: transparent;
+}
+
+.events__event--color1 {
+  background-color: #ffe589;
+}
+
+.events__event--color2 {
+  background-color: #b9c6ff;
+}
+
+.events__event--color3 {
+  background-color: #99ff7e;
+}
+
+.events__event--color4 {
+  background-color: #ffb38a;
+}
+
+.events__event--color5 {
+  background-color: #a5fcff;
+}
+
+.events__event--color6 {
+  background-color: #ff8e9b;
+}
+
+.events__event--color7 {
+  background-color: #e3ff7e;
+}
+
+.events__event--color8 {
+  background-color: #ffa3d8;
+}
+
+.events__event--color9 {
+  background-color: #5ca6ff;
+}
+
+.events__event--color10 {
+  background-color: #9bffbb;
+}
