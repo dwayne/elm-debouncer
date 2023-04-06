@@ -34,19 +34,23 @@ viewControls : Bool -> msg -> msg -> H.Html msg
 viewControls isRunning onStart onStop =
     H.div [ HA.class "controls" ]
         [ H.div [ HA.class "controls__control" ]
-            [ viewButton "Trigger area"
-                True
-                isRunning
-                [ HE.onMouseOver onStart
-                , HE.onClick onStart
-                ]
+            [ viewButton "Trigger area" True isRunning <|
+                if isRunning then
+                    []
+
+                else
+                    [ HE.onMouseOver onStart
+                    , HE.onClick onStart
+                    ]
             ]
         , H.div [ HA.class "controls__control" ]
-            [ viewButton "Reset"
-                False
-                False
-                [ HE.onClick onStop
-                ]
+            [ viewButton "Reset" False False <|
+                if isRunning then
+                    [ HE.onClick onStop
+                    ]
+
+                else
+                    []
             ]
         ]
 
