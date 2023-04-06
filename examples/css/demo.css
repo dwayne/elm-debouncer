@@ -1,3 +1,62 @@
+.demo__controls {
+  margin-bottom: 10px;
+}
+
+.controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.button {
+  border: none;
+  padding: 30px 60px;
+
+  cursor: pointer;
+
+  font-size: 14px;
+
+  background-color: transparent;
+  color: #fff;
+}
+
+.button--primary {
+  border: 1px solid #5ed1ff;
+
+  font-size: 17px;
+}
+
+.button--active {
+  background-color: #2f5065;
+}
+
+.panel {
+  padding: 20px;
+
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.panel__item:not(:last-child) {
+  margin-bottom: 16px;
+}
+
+.section__title {
+  margin-bottom: 12px;
+}
+
+.title {
+  margin: 0;
+  padding: 0;
+
+  font-weight: normal;
+  font-size: 14px;
+}
+
+.title__sub {
+  font-size: 13px;
+  color: #999;
+}
+
 .events {
   --event-pending-top: 13px;
   --event-pending-border-bottom: 4px;
