@@ -6,20 +6,22 @@ module Widget.Demo exposing
 
 import Html as H
 import Html.Attributes as HA
+import Html.Events as HE
 
 
-type alias Demo =
+type alias Demo msg =
     { section1 : Section
     , section2 : Section
     , isActive : Bool
+    , onReset : msg
     }
 
 
-view : Demo -> H.Html msg
-view { section1, section2, isActive } =
+view : Demo msg -> H.Html msg
+view { section1, section2, isActive, onReset } =
     H.div [ HA.class "demo" ]
         [ H.div [ HA.class "demo__controls" ]
-            [ viewControls isActive
+            [ viewControls isActive onReset
             ]
         , H.div [ HA.class "demo__panel" ]
             [ viewPanel section1 section2
@@ -27,28 +29,37 @@ view { section1, section2, isActive } =
         ]
 
 
-viewControls : Bool -> H.Html msg
-viewControls isActive =
+viewControls : Bool -> msg -> H.Html msg
+viewControls isActive onReset =
     H.div [ HA.class "controls" ]
         [ H.div [ HA.class "controls__control" ]
-            [ viewButton "Trigger area" True isActive
+            [ viewButton "Trigger area" True isActive []
             ]
         , H.div [ HA.class "controls__control" ]
-            [ viewButton "Reset" False False
+            [ viewButton "Reset"
+                False
+                False
+                [ HE.onClick onReset
+                ]
             ]
         ]
 
 
-viewButton : String -> Bool -> Bool -> H.Html msg
-viewButton text isPrimary isActive =
-    H.button
-        [ HA.class "button"
-        , HA.classList
-            [ ( "button--primary", isPrimary )
-            , ( "button--active", isActive )
+viewButton : String -> Bool -> Bool -> List (H.Attribute msg) -> H.Html msg
+viewButton text isPrimary isActive extraAttrs =
+    let
+        baseAttrs =
+            [ HA.class "button"
+            , HA.classList
+                [ ( "button--primary", isPrimary )
+                , ( "button--active", isActive )
+                ]
             ]
-        ]
-        [ H.text text ]
+
+        attrs =
+            baseAttrs ++ extraAttrs
+    in
+    H.button attrs [ H.text text ]
 
 
 viewPanel : Section -> Section -> H.Html msg
