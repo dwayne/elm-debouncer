@@ -1,6 +1,7 @@
 module TrailingDemo exposing (main)
 
 import Browser as B
+import Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
 import Timer exposing (Timer)
@@ -35,9 +36,9 @@ type alias Model =
     , debouncedEvents : List Int
     , isRunning : Bool
     , timer : Timer
+    , debouncer : Debouncer ()
     , currentColor : Int
     , rawColor : Int
-    , debouncedColor : Int
     }
 
 
@@ -47,9 +48,9 @@ init _ =
       , debouncedEvents = []
       , isRunning = False
       , timer = Timer.init
+      , debouncer = Debouncer.trailing <| 4 * frequency
       , currentColor = 2
       , rawColor = 0
-      , debouncedColor = 0
       }
     , Cmd.none
     )
@@ -65,6 +66,8 @@ type Msg
     | Stopped
     | TimerExpired
     | ChangedTimer (Timer.Msg Msg)
+    | ReadyToInvoke
+    | ChangedDecouncer (Debouncer.Msg Msg ())
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -85,9 +88,28 @@ update msg model =
             )
 
         GotEvent ->
-            ( { model | rawColor = model.currentColor }
-            , Cmd.none
-            )
+            -- FIXME: This is a hack since cancelled debouncers can still be
+            --        called. So the point of this conditional is to determine
+            --        if the debouncer was cancelled. I'd rather see that
+            --        cancelled debouncers do nothing.
+            if List.length model.rawEvents >= 90 then
+                ( model
+                , Cmd.none
+                )
+
+            else
+                let
+                    ( debouncer, cmd ) =
+                        Debouncer.call
+                            { onReady = always ReadyToInvoke
+                            , onChange = ChangedDecouncer
+                            }
+                            ()
+                            model.debouncer
+                in
+                ( { model | debouncer = debouncer, rawColor = model.currentColor }
+                , cmd
+                )
 
         Stopped ->
             ( { model
@@ -95,6 +117,8 @@ update msg model =
                 , debouncedEvents = []
                 , isRunning = False
                 , timer = Timer.cancel model.timer
+                , debouncer = Debouncer.cancel model.debouncer
+                , rawColor = 0
               }
             , Cmd.none
             )
@@ -105,19 +129,25 @@ update msg model =
                     model.rawColor :: model.rawEvents
 
                 debouncedEvents =
-                    model.debouncedColor :: model.debouncedEvents
+                    0 :: model.debouncedEvents
+
+                ( timer, debouncer ) =
+                    if List.length rawEvents >= 90 then
+                        ( Timer.cancel model.timer
+                        , Debouncer.cancel model.debouncer
+                        )
+
+                    else
+                        ( model.timer
+                        , model.debouncer
+                        )
             in
             ( { model
                 | rawEvents = rawEvents
                 , debouncedEvents = debouncedEvents
-                , timer =
-                    if List.length rawEvents >= 90 then
-                        Timer.cancel model.timer
-
-                    else
-                        model.timer
+                , timer = timer
+                , debouncer = debouncer
                 , rawColor = 0
-                , debouncedColor = 0
               }
             , Cmd.none
             )
@@ -125,6 +155,39 @@ update msg model =
         ChangedTimer timerMsg ->
             ( model
             , Timer.update ChangedTimer timerMsg model.timer
+            )
+
+        ReadyToInvoke ->
+            let
+                rawEvents =
+                    0 :: model.rawEvents
+
+                debouncedEvents =
+                    model.currentColor :: model.debouncedEvents
+            in
+            ( { model
+                | rawEvents = rawEvents
+                , debouncedEvents = debouncedEvents
+                , currentColor =
+                    if model.currentColor == 10 then
+                        2
+
+                    else
+                        model.currentColor + 1
+              }
+            , Cmd.none
+            )
+
+        ChangedDecouncer debouncerMsg ->
+            let
+                ( debouncer, cmd ) =
+                    Debouncer.update
+                        ChangedDecouncer
+                        debouncerMsg
+                        model.debouncer
+            in
+            ( { model | debouncer = debouncer }
+            , cmd
             )
 
 
