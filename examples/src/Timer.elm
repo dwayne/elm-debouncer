@@ -22,31 +22,31 @@ init =
 
 
 type alias Options msg =
-    { onExpired : msg
+    { onExpire : msg
     , onChange : Msg msg -> msg
     }
 
 
 setTimeout : Options msg -> Int -> Timer -> ( Timer, Cmd msg )
-setTimeout { onExpired, onChange } delay (Timer id) =
+setTimeout { onExpire, onChange } delay (Timer id) =
     let
         newId =
             id + 1
     in
     ( Timer newId
-    , sleep delay (Timeout newId onExpired)
+    , sleep delay (Timeout newId onExpire)
         |> Cmd.map onChange
     )
 
 
 setInterval : Options msg -> Int -> Timer -> ( Timer, Cmd msg )
-setInterval { onExpired, onChange } delay (Timer id) =
+setInterval { onExpire, onChange } delay (Timer id) =
     let
         newId =
             id + 1
     in
     ( Timer newId
-    , sleep delay (Interval delay newId onExpired)
+    , sleep delay (Interval delay newId onExpire)
         |> Cmd.map onChange
     )
 
@@ -64,18 +64,18 @@ type Msg msg
 update : (Msg msg -> msg) -> Msg msg -> Timer -> Cmd msg
 update onChange msg (Timer id) =
     case msg of
-        Timeout incomingId onExpired ->
+        Timeout incomingId onExpire ->
             if incomingId == id then
-                dispatch onExpired
+                dispatch onExpire
 
             else
                 Cmd.none
 
-        Interval delay incomingId onExpired ->
+        Interval delay incomingId onExpire ->
             if incomingId == id then
                 Cmd.batch
-                    [ dispatch onExpired
-                    , sleep delay (Interval delay id onExpired)
+                    [ dispatch onExpire
+                    , sleep delay (Interval delay id onExpire)
                         |> Cmd.map onChange
                     ]
 

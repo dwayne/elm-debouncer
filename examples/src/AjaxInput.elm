@@ -105,7 +105,7 @@ update msg model =
                 let
                     ( timer, cmd ) =
                         Timer.setTimeout
-                            { onExpired = GotResult
+                            { onExpire = GotResult
                             , onChange = ChangedTimer
                             }
                             2000

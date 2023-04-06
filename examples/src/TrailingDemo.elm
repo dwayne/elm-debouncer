@@ -3,6 +3,7 @@ module TrailingDemo exposing (main)
 import Browser as B
 import Html as H
 import Html.Attributes as HA
+import Timer exposing (Timer)
 import Widget.Demo as Demo
 
 
@@ -16,6 +17,13 @@ main =
         }
 
 
+-- CONSTRANTS
+
+
+frequency : Int
+frequency =
+    100
+
 
 -- MODEL
 
@@ -24,6 +32,7 @@ type alias Model =
     { rawEvents : List Int
     , debouncedEvents : List Int
     , isRunning : Bool
+    , timer : Timer
     }
 
 
@@ -32,6 +41,7 @@ init _ =
     ( { rawEvents = []
       , debouncedEvents = []
       , isRunning = False
+      , timer = Timer.init
       }
     , Cmd.none
     )
@@ -45,14 +55,25 @@ type Msg
     = Started
     | GotEvent
     | Stopped
+    | TimerExpired
+    | ChangedTimer (Timer.Msg Msg)
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Started ->
-            ( { model | isRunning = True }
-            , Cmd.none
+            let
+                ( timer, cmd ) =
+                    Timer.setInterval
+                        { onExpire = TimerExpired
+                        , onChange = ChangedTimer
+                        }
+                        frequency
+                        model.timer
+            in
+            ( { model | isRunning = True, timer = timer }
+            , cmd
             )
 
         GotEvent ->
@@ -61,8 +82,39 @@ update msg model =
             )
 
         Stopped ->
-            ( { model | isRunning = False }
+            ( { model
+                | rawEvents = []
+                , debouncedEvents = []
+                , isRunning = False
+                , timer = Timer.cancel model.timer
+                }
             , Cmd.none
+            )
+
+        TimerExpired ->
+            let
+                rawEvents =
+                    0 :: model.rawEvents
+
+                debouncedEvents =
+                    0 :: model.debouncedEvents
+            in
+            ( { model
+              | rawEvents = rawEvents
+              , debouncedEvents = debouncedEvents
+              , timer =
+                  if List.length rawEvents >= 90 then
+                      Timer.cancel model.timer
+
+                  else
+                      model.timer
+              }
+            , Cmd.none
+            )
+
+        ChangedTimer timerMsg ->
+            ( model
+            , Timer.update ChangedTimer timerMsg model.timer
             )
 
 
