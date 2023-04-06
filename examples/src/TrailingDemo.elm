@@ -43,6 +43,7 @@ init _ =
 
 type Msg
     = Started
+    | GotEvent
     | Stopped
 
 
@@ -51,6 +52,11 @@ update msg model =
     case msg of
         Started ->
             ( { model | isRunning = True }
+            , Cmd.none
+            )
+
+        GotEvent ->
+            ( model
             , Cmd.none
             )
 
@@ -80,6 +86,7 @@ view { rawEvents, debouncedEvents, isRunning } =
                 }
             , isRunning = isRunning
             , onStart = Started
+            , onEvent = GotEvent
             , onStop = Stopped
             }
         ]

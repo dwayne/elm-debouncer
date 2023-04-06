@@ -7,6 +7,7 @@ module Widget.Demo exposing
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
+import Json.Decode as JD
 
 
 type alias Demo msg =
@@ -14,15 +15,16 @@ type alias Demo msg =
     , section2 : Section
     , isRunning : Bool
     , onStart : msg
+    , onEvent : msg
     , onStop : msg
     }
 
 
 view : Demo msg -> H.Html msg
-view { section1, section2, isRunning, onStart, onStop } =
+view { section1, section2, isRunning, onStart, onEvent, onStop } =
     H.div [ HA.class "demo" ]
         [ H.div [ HA.class "demo__controls" ]
-            [ viewControls isRunning onStart onStop
+            [ viewControls isRunning onStart onEvent onStop
             ]
         , H.div [ HA.class "demo__panel" ]
             [ viewPanel section1 section2
@@ -30,17 +32,20 @@ view { section1, section2, isRunning, onStart, onStop } =
         ]
 
 
-viewControls : Bool -> msg -> msg -> H.Html msg
-viewControls isRunning onStart onStop =
+viewControls : Bool -> msg -> msg -> msg -> H.Html msg
+viewControls isRunning onStart onEvent onStop =
     H.div [ HA.class "controls" ]
         [ H.div [ HA.class "controls__control" ]
             [ viewButton "Trigger area" True isRunning <|
                 if isRunning then
-                    []
+                    [ onMouseMove onEvent
+                    , HE.onClick onEvent
+                    ]
 
                 else
                     [ HE.onMouseOver onStart
                     , HE.onClick onStart
+                    , onMouseMove onEvent
                     ]
             ]
         , H.div [ HA.class "controls__control" ]
@@ -53,6 +58,13 @@ viewControls isRunning onStart onStop =
                     []
             ]
         ]
+
+
+
+onMouseMove : msg -> H.Attribute msg
+onMouseMove =
+    HE.on "mousemove" << JD.succeed
+
 
 
 viewButton : String -> Bool -> Bool -> List (H.Attribute msg) -> H.Html msg
