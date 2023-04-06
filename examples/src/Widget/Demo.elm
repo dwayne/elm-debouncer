@@ -12,16 +12,17 @@ import Html.Events as HE
 type alias Demo msg =
     { section1 : Section
     , section2 : Section
-    , isActive : Bool
-    , onReset : msg
+    , isRunning : Bool
+    , onStart : msg
+    , onStop : msg
     }
 
 
 view : Demo msg -> H.Html msg
-view { section1, section2, isActive, onReset } =
+view { section1, section2, isRunning, onStart, onStop } =
     H.div [ HA.class "demo" ]
         [ H.div [ HA.class "demo__controls" ]
-            [ viewControls isActive onReset
+            [ viewControls isRunning onStart onStop
             ]
         , H.div [ HA.class "demo__panel" ]
             [ viewPanel section1 section2
@@ -29,30 +30,35 @@ view { section1, section2, isActive, onReset } =
         ]
 
 
-viewControls : Bool -> msg -> H.Html msg
-viewControls isActive onReset =
+viewControls : Bool -> msg -> msg -> H.Html msg
+viewControls isRunning onStart onStop =
     H.div [ HA.class "controls" ]
         [ H.div [ HA.class "controls__control" ]
-            [ viewButton "Trigger area" True isActive []
+            [ viewButton "Trigger area"
+                True
+                isRunning
+                [ HE.onMouseOver onStart
+                , HE.onClick onStart
+                ]
             ]
         , H.div [ HA.class "controls__control" ]
             [ viewButton "Reset"
                 False
                 False
-                [ HE.onClick onReset
+                [ HE.onClick onStop
                 ]
             ]
         ]
 
 
 viewButton : String -> Bool -> Bool -> List (H.Attribute msg) -> H.Html msg
-viewButton text isPrimary isActive extraAttrs =
+viewButton text isPrimary isRunning extraAttrs =
     let
         baseAttrs =
             [ HA.class "button"
             , HA.classList
                 [ ( "button--primary", isPrimary )
-                , ( "button--active", isActive )
+                , ( "button--active", isRunning )
                 ]
             ]
 

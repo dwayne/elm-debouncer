@@ -23,7 +23,7 @@ main =
 type alias Model =
     { rawEvents : List Int
     , debouncedEvents : List Int
-    , isActive : Bool
+    , isRunning : Bool
     }
 
 
@@ -31,7 +31,7 @@ init : () -> ( Model, Cmd msg )
 init _ =
     ( { rawEvents = []
       , debouncedEvents = []
-      , isActive = True
+      , isRunning = False
       }
     , Cmd.none
     )
@@ -42,14 +42,20 @@ init _ =
 
 
 type Msg
-    = ClickedReset
+    = Started
+    | Stopped
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case msg of
-        ClickedReset ->
-            ( { model | isActive = False }
+        Started ->
+            ( { model | isRunning = True }
+            , Cmd.none
+            )
+
+        Stopped ->
+            ( { model | isRunning = False }
             , Cmd.none
             )
 
@@ -59,7 +65,7 @@ update msg model =
 
 
 view : Model -> H.Html Msg
-view { rawEvents, debouncedEvents, isActive } =
+view { rawEvents, debouncedEvents, isRunning } =
     H.div [ HA.class "content" ]
         [ Demo.view
             { section1 =
@@ -72,7 +78,8 @@ view { rawEvents, debouncedEvents, isActive } =
                 , subtitle = Just "400ms, trailing"
                 , events = debouncedEvents
                 }
-            , isActive = isActive
-            , onReset = ClickedReset
+            , isRunning = isRunning
+            , onStart = Started
+            , onStop = Stopped
             }
         ]
