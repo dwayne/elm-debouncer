@@ -17,12 +17,14 @@ main =
         }
 
 
+
 -- CONSTRANTS
 
 
 frequency : Int
 frequency =
     100
+
 
 
 -- MODEL
@@ -33,6 +35,9 @@ type alias Model =
     , debouncedEvents : List Int
     , isRunning : Bool
     , timer : Timer
+    , currentColor : Int
+    , rawColor : Int
+    , debouncedColor : Int
     }
 
 
@@ -42,6 +47,9 @@ init _ =
       , debouncedEvents = []
       , isRunning = False
       , timer = Timer.init
+      , currentColor = 2
+      , rawColor = 0
+      , debouncedColor = 0
       }
     , Cmd.none
     )
@@ -77,7 +85,7 @@ update msg model =
             )
 
         GotEvent ->
-            ( model
+            ( { model | rawColor = model.currentColor }
             , Cmd.none
             )
 
@@ -87,27 +95,29 @@ update msg model =
                 , debouncedEvents = []
                 , isRunning = False
                 , timer = Timer.cancel model.timer
-                }
+              }
             , Cmd.none
             )
 
         TimerExpired ->
             let
                 rawEvents =
-                    0 :: model.rawEvents
+                    model.rawColor :: model.rawEvents
 
                 debouncedEvents =
-                    0 :: model.debouncedEvents
+                    model.debouncedColor :: model.debouncedEvents
             in
             ( { model
-              | rawEvents = rawEvents
-              , debouncedEvents = debouncedEvents
-              , timer =
-                  if List.length rawEvents >= 90 then
-                      Timer.cancel model.timer
+                | rawEvents = rawEvents
+                , debouncedEvents = debouncedEvents
+                , timer =
+                    if List.length rawEvents >= 90 then
+                        Timer.cancel model.timer
 
-                  else
-                      model.timer
+                    else
+                        model.timer
+                , rawColor = 0
+                , debouncedColor = 0
               }
             , Cmd.none
             )
@@ -129,12 +139,12 @@ view { rawEvents, debouncedEvents, isRunning } =
             { section1 =
                 { title = "Raw events over time"
                 , subtitle = Nothing
-                , events = rawEvents
+                , events = List.reverse rawEvents
                 }
             , section2 =
                 { title = "Debounced events"
                 , subtitle = Just "400ms, trailing"
-                , events = debouncedEvents
+                , events = List.reverse debouncedEvents
                 }
             , isRunning = isRunning
             , onStart = Started

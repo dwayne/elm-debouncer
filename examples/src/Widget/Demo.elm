@@ -60,11 +60,9 @@ viewControls isRunning onStart onEvent onStop =
         ]
 
 
-
 onMouseMove : msg -> H.Attribute msg
 onMouseMove =
     HE.on "mousemove" << JD.succeed
-
 
 
 viewButton : String -> Bool -> Bool -> List (H.Attribute msg) -> H.Html msg
