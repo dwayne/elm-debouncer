@@ -9,7 +9,7 @@ import Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
-import Timer exposing (Timer)
+import Lib.Timer as Timer exposing (Timer)
 
 
 main : Program () Model Msg

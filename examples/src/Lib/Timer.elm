@@ -1,4 +1,4 @@
-module Timer exposing
+module Lib.Timer exposing
     ( Msg
     , Timer
     , cancel

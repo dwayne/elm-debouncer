@@ -4,7 +4,7 @@ import Browser as B
 import Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
-import Timer exposing (Timer)
+import Lib.Timer as Timer exposing (Timer)
 import Widget.Demo as Demo
 
 
