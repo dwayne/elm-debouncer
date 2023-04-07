@@ -19,15 +19,6 @@ main =
 
 
 
--- CONSTRANTS
-
-
-frequency : Int
-frequency =
-    100
-
-
-
 -- MODEL
 
 
@@ -48,7 +39,7 @@ init _ =
       , debouncedEvents = []
       , isRunning = False
       , timer = Timer.init
-      , debouncer = Debouncer.trailing <| 4 * frequency
+      , debouncer = Debouncer.trailing <| 4 * sampleRate
       , currentColor = 2
       , rawColor = 0
       }
@@ -80,7 +71,7 @@ update msg model =
                         { onExpire = TimerExpired
                         , onChange = ChangedTimer
                         }
-                        frequency
+                        sampleRate
                         model.timer
             in
             ( { model | isRunning = True, timer = timer }
@@ -88,28 +79,18 @@ update msg model =
             )
 
         GotEvent ->
-            -- FIXME: This is a hack since cancelled debouncers can still be
-            --        called. So the point of this conditional is to determine
-            --        if the debouncer was cancelled. I'd rather see that
-            --        cancelled debouncers do nothing.
-            if List.length model.rawEvents >= 90 then
-                ( model
-                , Cmd.none
-                )
-
-            else
-                let
-                    ( debouncer, cmd ) =
-                        Debouncer.call
-                            { onReady = always ReadyToInvoke
-                            , onChange = ChangedDecouncer
-                            }
-                            ()
-                            model.debouncer
-                in
-                ( { model | debouncer = debouncer, rawColor = model.currentColor }
-                , cmd
-                )
+            let
+                ( debouncer, cmd ) =
+                    Debouncer.call
+                        { onReady = always ReadyToInvoke
+                        , onChange = ChangedDecouncer
+                        }
+                        ()
+                        model.debouncer
+            in
+            ( { model | debouncer = debouncer, rawColor = model.currentColor }
+            , cmd
+            )
 
         Stopped ->
             ( { model
@@ -132,7 +113,7 @@ update msg model =
                     0 :: model.debouncedEvents
 
                 ( timer, debouncer ) =
-                    if List.length rawEvents >= 90 then
+                    if isFull rawEvents then
                         ( Timer.cancel model.timer
                         , Debouncer.cancel model.debouncer
                         )
@@ -210,8 +191,23 @@ view { rawEvents, debouncedEvents, isRunning } =
                 , events = List.reverse debouncedEvents
                 }
             , isRunning = isRunning
+            , isFull = isFull rawEvents
             , onStart = Started
             , onEvent = GotEvent
             , onStop = Stopped
             }
         ]
+
+
+
+-- MISC
+
+
+sampleRate : Int
+sampleRate =
+    100
+
+
+isFull : List a -> Bool
+isFull list =
+    List.length list >= 90

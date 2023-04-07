@@ -14,6 +14,7 @@ type alias Demo msg =
     { section1 : Section
     , section2 : Section
     , isRunning : Bool
+    , isFull : Bool
     , onStart : msg
     , onEvent : msg
     , onStop : msg
@@ -21,10 +22,10 @@ type alias Demo msg =
 
 
 view : Demo msg -> H.Html msg
-view { section1, section2, isRunning, onStart, onEvent, onStop } =
+view { section1, section2, isRunning, isFull, onStart, onEvent, onStop } =
     H.div [ HA.class "demo" ]
         [ H.div [ HA.class "demo__controls" ]
-            [ viewControls isRunning onStart onEvent onStop
+            [ viewControls isRunning isFull onStart onEvent onStop
             ]
         , H.div [ HA.class "demo__panel" ]
             [ viewPanel section1 section2
@@ -32,15 +33,19 @@ view { section1, section2, isRunning, onStart, onEvent, onStop } =
         ]
 
 
-viewControls : Bool -> msg -> msg -> msg -> H.Html msg
-viewControls isRunning onStart onEvent onStop =
+viewControls : Bool -> Bool -> msg -> msg -> msg -> H.Html msg
+viewControls isRunning isFull onStart onEvent onStop =
     H.div [ HA.class "controls" ]
         [ H.div [ HA.class "controls__control" ]
             [ viewButton "Trigger area" True isRunning <|
                 if isRunning then
-                    [ onMouseMove onEvent
-                    , HE.onClick onEvent
-                    ]
+                    if isFull then
+                        []
+
+                    else
+                        [ onMouseMove onEvent
+                        , HE.onClick onEvent
+                        ]
 
                 else
                     [ HE.onMouseOver onStart
