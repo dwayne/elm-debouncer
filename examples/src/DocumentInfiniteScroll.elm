@@ -1,4 +1,4 @@
-module InfiniteScroll exposing (main)
+port module DocumentInfiniteScroll exposing (main)
 
 -- This example is based on
 -- https://css-tricks.com/debouncing-throttling-explained-examples/#aa-infinite-scrolling.
@@ -9,6 +9,7 @@ import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
 import Json.Decode as JD
+import Json.Encode as JE
 
 
 main : Program () Model Msg
@@ -17,7 +18,7 @@ main =
         { init = init
         , view = view
         , update = update
-        , subscriptions = always Sub.none
+        , subscriptions = subscriptions
         }
 
 
@@ -50,7 +51,7 @@ init _ =
 
 
 type Msg
-    = Scrolled ScrollEvent
+    = Scrolled JE.Value
     | ReadyToCheck ScrollEvent
     | ChangedDebouncer (Debouncer.Msg Msg ScrollEvent)
 
@@ -58,19 +59,26 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Scrolled event ->
-            let
-                ( debouncer, cmd ) =
-                    Debouncer.call
-                        { onReady = ReadyToCheck
-                        , onChange = ChangedDebouncer
-                        }
-                        event
-                        model.debouncer
-            in
-            ( { model | debouncer = debouncer }
-            , cmd
-            )
+        Scrolled value ->
+            case JD.decodeValue scrollEventDecoder value of
+                Ok event ->
+                    let
+                        ( debouncer, cmd ) =
+                            Debouncer.call
+                                { onReady = ReadyToCheck
+                                , onChange = ChangedDebouncer
+                                }
+                                event
+                                model.debouncer
+                    in
+                    ( { model | debouncer = debouncer }
+                    , cmd
+                    )
+
+                Err _ ->
+                    ( model
+                    , Cmd.none
+                    )
 
         ReadyToCheck { sceneHeight, viewportY, viewportHeight } ->
             let
@@ -101,6 +109,22 @@ update msg model =
 
 
 
+-- PORTS
+
+
+port onScroll : (JE.Value -> msg) -> Sub msg
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    onScroll Scrolled
+
+
+
 -- VIEW
 
 
@@ -113,10 +137,7 @@ view model =
         blocks =
             List.reverse model.blocks
     in
-    H.div
-        [ HA.class "content"
-        , onScroll Scrolled
-        ]
+    H.div []
         (header :: List.map viewBlock blocks)
 
 
@@ -147,14 +168,9 @@ type alias ScrollEvent =
     }
 
 
-onScroll : (ScrollEvent -> msg) -> H.Attribute msg
-onScroll toMsg =
-    let
-        scrollEventDecoder =
-            JD.field "target" <|
-                JD.map3 ScrollEvent
-                    (JD.field "scrollHeight" JD.int)
-                    (JD.field "scrollTop" JD.int)
-                    (JD.field "clientHeight" JD.int)
-    in
-    HE.on "scroll" (JD.map toMsg scrollEventDecoder)
+scrollEventDecoder : JD.Decoder ScrollEvent
+scrollEventDecoder =
+    JD.map3 ScrollEvent
+        (JD.field "sceneHeight" JD.int)
+        (JD.field "viewportY" JD.int)
+        (JD.field "viewportHeight" JD.int)
