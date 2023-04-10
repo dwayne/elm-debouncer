@@ -5,7 +5,7 @@ module Resize exposing (main)
 
 import Browser as B
 import Browser.Events as BE
-import Debouncer exposing (Debouncer)
+import Debouncer2 as Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
 
@@ -39,11 +39,7 @@ type alias Event =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    let
-        debouncer =
-            Debouncer.trailing 400
-    in
-    ( Model [] [] debouncer
+    ( Model [] [] Debouncer.init
     , Cmd.none
     )
 
@@ -55,7 +51,7 @@ init _ =
 type Msg
     = ResizedWindow Int Int
     | ReadyToInvoke Event
-    | ChangedDebouncer (Debouncer.Msg Msg Event)
+    | ChangedDebouncer Debouncer.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -68,9 +64,7 @@ update msg model =
 
                 ( debouncer, cmd ) =
                     Debouncer.call
-                        { onReady = ReadyToInvoke
-                        , onChange = ChangedDebouncer
-                        }
+                        debouncerConfig
                         event
                         model.debouncer
             in
@@ -90,13 +84,22 @@ update msg model =
             let
                 ( debouncer, cmd ) =
                     Debouncer.update
-                        ChangedDebouncer
+                        debouncerConfig
                         debouncerMsg
                         model.debouncer
             in
             ( { model | debouncer = debouncer }
             , cmd
             )
+
+
+debouncerConfig : Debouncer.Config Event Msg
+debouncerConfig =
+    Debouncer.trailing
+        { wait = 500
+        , onReady = ReadyToInvoke
+        , onChange = ChangedDebouncer
+        }
 
 
 
