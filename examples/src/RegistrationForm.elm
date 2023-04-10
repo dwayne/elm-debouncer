@@ -4,12 +4,11 @@ module RegistrationForm exposing (main)
 -- https://github.com/Orasund/elm-cookbook/issues/1#issue-456089065
 
 import Browser as B
-import Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
-import Html.Events as HE
 import Lib.Timer as Timer exposing (Timer)
 import Random
+import Widget.TextInput as TextInput exposing (TextInput)
 
 
 main : Program () Model Msg
@@ -27,9 +26,8 @@ main =
 
 
 type alias Model =
-    { username : String
+    { username : TextInput
     , status : Status
-    , debouncer : Debouncer String
     , timer : Timer
     }
 
@@ -43,9 +41,8 @@ type Status
 
 init : () -> ( Model, Cmd msg )
 init _ =
-    ( { username = ""
+    ( { username = TextInput.init "" 500
       , status = Normal
-      , debouncer = Debouncer.trailing 500
       , timer = Timer.init
       }
     , Cmd.none
@@ -57,9 +54,9 @@ init _ =
 
 
 type Msg
-    = EnteredUsername String
+    = EnteredUsername
     | ReadyToInvoke String
-    | ChangedDebouncer (Debouncer.Msg Msg String)
+    | ChangedUsername (TextInput.Msg Msg)
     | TimerExpired
     | ChangedTimer (Timer.Msg Msg)
     | GotResult Bool
@@ -68,53 +65,34 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        EnteredUsername username ->
-            let
-                ( debouncer, cmd ) =
-                    Debouncer.call
-                        { onReady = ReadyToInvoke
-                        , onChange = ChangedDebouncer
-                        }
-                        username
-                        model.debouncer
-            in
-            ( { model
-                | username = username
-                , status = Normal
-                , debouncer = debouncer
-              }
-            , cmd
+        EnteredUsername ->
+            ( { model | status = Normal }
+            , Cmd.none
             )
 
         ReadyToInvoke username ->
-            if String.isEmpty username then
-                ( model
-                , Cmd.none
-                )
-
-            else
-                let
-                    ( timer, cmd ) =
-                        Timer.setTimeout
-                            { onExpire = TimerExpired
-                            , onChange = ChangedTimer
-                            }
-                            5000
-                            model.timer
-                in
-                ( { model | status = Checking username, timer = timer }
-                , cmd
-                )
-
-        ChangedDebouncer debouncerMsg ->
             let
-                ( debouncer, cmd ) =
-                    Debouncer.update
-                        ChangedDebouncer
-                        debouncerMsg
-                        model.debouncer
+                ( timer, cmd ) =
+                    Timer.setTimeout
+                        { onExpire = TimerExpired
+                        , onChange = ChangedTimer
+                        }
+                        5000
+                        model.timer
             in
-            ( { model | debouncer = debouncer }
+            ( { model | status = Checking username, timer = timer }
+            , cmd
+            )
+
+        ChangedUsername usernameMsg ->
+            let
+                ( username, cmd ) =
+                    TextInput.update
+                        ChangedUsername
+                        usernameMsg
+                        model.username
+            in
+            ( { model | username = username }
             , cmd
             )
 
@@ -158,13 +136,13 @@ view : Model -> H.Html Msg
 view { username, status } =
     H.form []
         [ H.label [] [ H.text "Username: " ]
-        , H.input
-            [ HA.type_ "text"
-            , HA.autofocus True
-            , HA.value username
-            , HE.onInput EnteredUsername
-            ]
-            []
+        , TextInput.view
+            { autofocus = True
+            , onInput = always EnteredUsername
+            , onReady = ReadyToInvoke
+            , onChange = ChangedUsername
+            }
+            username
         , H.p []
             [ case status of
                 Normal ->
