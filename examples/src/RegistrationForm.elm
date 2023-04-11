@@ -21,7 +21,6 @@ main =
         }
 
 
-
 -- MODEL
 
 
@@ -41,7 +40,7 @@ type Status
 
 init : () -> ( Model, Cmd msg )
 init _ =
-    ( { username = TextInput.init "" 500
+    ( { username = TextInput.init ""
       , status = Normal
       , timer = Timer.init
       }
@@ -56,9 +55,9 @@ init _ =
 type Msg
     = EnteredUsername
     | ReadyToInvoke String
-    | ChangedUsername (TextInput.Msg Msg)
+    | ChangedUsername TextInput.Msg
     | TimerExpired
-    | ChangedTimer (Timer.Msg Msg)
+    | ChangedTimer Timer.Msg
     | GotResult Bool
 
 
@@ -66,19 +65,23 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         EnteredUsername ->
-            ( { model | status = Normal }
+            ( { model
+              | status = Normal
+              , timer =
+                  case model.status of
+                      Checking _ ->
+                          Timer.cancel model.timer
+
+                      _ ->
+                          model.timer
+              }
             , Cmd.none
             )
 
         ReadyToInvoke username ->
             let
                 ( timer, cmd ) =
-                    Timer.setTimeout
-                        { onExpire = TimerExpired
-                        , onChange = ChangedTimer
-                        }
-                        5000
-                        model.timer
+                    Timer.setTimeout timerConfig model.timer
             in
             ( { model | status = Checking username, timer = timer }
             , cmd
@@ -87,10 +90,7 @@ update msg model =
         ChangedUsername usernameMsg ->
             let
                 ( username, cmd ) =
-                    TextInput.update
-                        ChangedUsername
-                        usernameMsg
-                        model.username
+                    TextInput.update textInputConfig usernameMsg model.username
             in
             ( { model | username = username }
             , cmd
@@ -107,7 +107,7 @@ update msg model =
 
         ChangedTimer timerMsg ->
             ( model
-            , Timer.update ChangedTimer timerMsg model.timer
+            , Timer.update timerConfig timerMsg model.timer
             )
 
         GotResult isFree ->
@@ -128,6 +128,14 @@ update msg model =
             )
 
 
+timerConfig : Timer.Config Msg
+timerConfig =
+    Timer.config
+        { wait = 5000
+        , onExpire = TimerExpired
+        , onChange = ChangedTimer
+        }
+
 
 -- VIEW
 
@@ -136,13 +144,7 @@ view : Model -> H.Html Msg
 view { username, status } =
     H.form []
         [ H.label [] [ H.text "Username: " ]
-        , TextInput.view
-            { autofocus = True
-            , onInput = always EnteredUsername
-            , onReady = ReadyToInvoke
-            , onChange = ChangedUsername
-            }
-            username
+        , TextInput.view { autofocus = True } textInputConfig username
         , H.p []
             [ case status of
                 Normal ->
@@ -167,3 +169,13 @@ view { username, status } =
                         ]
             ]
         ]
+
+
+textInputConfig : TextInput.Config Msg
+textInputConfig =
+    TextInput.config
+        { wait = 500
+        , onInput = always EnteredUsername
+        , onReady = ReadyToInvoke
+        , onChange = ChangedUsername
+        }

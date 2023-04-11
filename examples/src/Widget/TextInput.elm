@@ -1,14 +1,15 @@
 module Widget.TextInput exposing
-    ( Msg
+    ( Config
+    , Msg
     , TextInput
-    , UpdateOptions
     , ViewOptions
+    , config
     , init
     , update
     , view
     )
 
-import Debouncer exposing (Debouncer)
+import Debouncer2 as Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
@@ -22,46 +23,65 @@ type TextInput
         }
 
 
-init : String -> Int -> TextInput
-init initialValue wait =
+init : String -> TextInput
+init initialValue =
     TextInput
         { value = initialValue
-        , debouncer = Debouncer.trailing wait
+        , debouncer = Debouncer.init
+        }
+
+type Config msg
+    = Config
+        { debouncerConfig : Debouncer.Config String Msg
+        , onInput : String -> msg
+        , onReady : String -> msg
+        , onChange : Msg -> msg
         }
 
 
-type Msg msg
-    = EnteredValue (String -> msg) (String -> msg) String
-    | ReadyToInvoke (String -> msg) String
-    | ChangedDebouncer (Debouncer.Msg (Msg msg) String)
+config
+    : { wait : Int
+      , onInput : String -> msg
+      , onReady : String -> msg
+      , onChange : Msg -> msg
+      }
+    -> Config msg
+config { wait, onInput, onReady, onChange } =
+    Config
+        { debouncerConfig =
+            Debouncer.trailing
+                { wait = wait
+                , onReady = ReadyToInvoke
+                , onChange = ChangedDebouncer
+                }
+        , onInput = onInput
+        , onReady = onReady
+        , onChange = onChange
+        }
 
 
-type alias UpdateOptions msg =
-    { onChange : Msg msg -> msg
-    }
+type Msg
+    = EnteredValue String
+    | ReadyToInvoke String
+    | ChangedDebouncer Debouncer.Msg
 
 
-update : (Msg msg -> msg) -> Msg msg -> TextInput -> ( TextInput, Cmd msg )
-update onChange msg ((TextInput state) as textInput) =
+update : Config msg -> Msg -> TextInput -> ( TextInput, Cmd msg )
+update (Config c) msg ((TextInput state) as textInput) =
     case msg of
-        EnteredValue onInput onReady value ->
+        EnteredValue value ->
             let
                 ( debouncer, cmd ) =
-                    Debouncer.call
-                        { onReady = ReadyToInvoke onReady
-                        , onChange = ChangedDebouncer
-                        }
-                        value
-                        state.debouncer
+                    Debouncer.call c.debouncerConfig value state.debouncer
             in
             ( TextInput { value = value, debouncer = debouncer }
             , Cmd.batch
-                [ Cmd.map onChange cmd
-                , dispatch <| onInput value
+                [ Cmd.map c.onChange cmd
+                , dispatch <| c.onInput value
                 ]
             )
 
-        ReadyToInvoke onReady value ->
+        ReadyToInvoke value ->
             if String.isEmpty value then
                 ( textInput
                 , Cmd.none
@@ -69,40 +89,34 @@ update onChange msg ((TextInput state) as textInput) =
 
             else
                 ( textInput
-                , dispatch <| onReady value
+                , dispatch <| c.onReady value
                 )
 
         ChangedDebouncer debouncerMsg ->
             let
                 ( debouncer, cmd ) =
-                    Debouncer.update
-                        ChangedDebouncer
-                        debouncerMsg
-                        state.debouncer
+                    Debouncer.update c.debouncerConfig debouncerMsg state.debouncer
             in
             ( TextInput { state | debouncer = debouncer }
-            , Cmd.map onChange cmd
+            , Cmd.map c.onChange cmd
             )
 
 
-type alias ViewOptions msg =
+type alias ViewOptions =
     { autofocus : Bool
-    , onInput : String -> msg
-    , onReady : String -> msg
-    , onChange : Msg msg -> msg
     }
 
 
-view : ViewOptions msg -> TextInput -> H.Html msg
-view { autofocus, onInput, onReady, onChange } (TextInput { value }) =
+view : ViewOptions -> Config msg -> TextInput -> H.Html msg
+view { autofocus } (Config c) (TextInput { value }) =
     H.input
         [ HA.type_ "text"
         , HA.autofocus autofocus
         , HA.value value
-        , HE.onInput (EnteredValue onInput onReady)
+        , HE.onInput EnteredValue
         ]
         []
-        |> H.map onChange
+        |> H.map c.onChange
 
 
 dispatch : msg -> Cmd msg
