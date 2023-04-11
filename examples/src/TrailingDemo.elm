@@ -1,7 +1,7 @@
 module TrailingDemo exposing (main)
 
 import Browser as B
-import Debouncer exposing (Debouncer)
+import Debouncer2 as Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
 import Lib.Timer as Timer exposing (Timer)
@@ -39,13 +39,12 @@ init _ =
       , debouncedEvents = []
       , isRunning = False
       , timer = Timer.init
-      , debouncer = Debouncer.trailing <| 4 * sampleRate
+      , debouncer = Debouncer.init
       , currentColor = 2
       , rawColor = 0
       }
     , Cmd.none
     )
-
 
 
 -- UPDATE
@@ -56,9 +55,9 @@ type Msg
     | GotEvent
     | Stopped
     | TimerExpired
-    | ChangedTimer (Timer.Msg Msg)
+    | ChangedTimer Timer.Msg
     | ReadyToInvoke
-    | ChangedDecouncer (Debouncer.Msg Msg ())
+    | ChangedDebouncer Debouncer.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -67,12 +66,7 @@ update msg model =
         Started ->
             let
                 ( timer, cmd ) =
-                    Timer.setInterval
-                        { onExpire = TimerExpired
-                        , onChange = ChangedTimer
-                        }
-                        sampleRate
-                        model.timer
+                    Timer.setInterval timerConfig model.timer
             in
             ( { model | isRunning = True, timer = timer }
             , cmd
@@ -81,12 +75,7 @@ update msg model =
         GotEvent ->
             let
                 ( debouncer, cmd ) =
-                    Debouncer.call
-                        { onReady = always ReadyToInvoke
-                        , onChange = ChangedDecouncer
-                        }
-                        ()
-                        model.debouncer
+                    Debouncer.call debouncerConfig () model.debouncer
             in
             ( { model | debouncer = debouncer, rawColor = model.currentColor }
             , cmd
@@ -135,7 +124,7 @@ update msg model =
 
         ChangedTimer timerMsg ->
             ( model
-            , Timer.update ChangedTimer timerMsg model.timer
+            , Timer.update timerConfig timerMsg model.timer
             )
 
         ReadyToInvoke ->
@@ -159,18 +148,32 @@ update msg model =
             , Cmd.none
             )
 
-        ChangedDecouncer debouncerMsg ->
+        ChangedDebouncer debouncerMsg ->
             let
                 ( debouncer, cmd ) =
-                    Debouncer.update
-                        ChangedDecouncer
-                        debouncerMsg
-                        model.debouncer
+                    Debouncer.update debouncerConfig debouncerMsg model.debouncer
             in
             ( { model | debouncer = debouncer }
             , cmd
             )
 
+
+timerConfig : Timer.Config Msg
+timerConfig =
+    Timer.config
+        { wait = sampleRate
+        , onExpire = TimerExpired
+        , onChange = ChangedTimer
+        }
+
+
+debouncerConfig : Debouncer.Config () Msg
+debouncerConfig =
+    Debouncer.trailing
+        { wait = 4 * sampleRate
+        , onReady = always ReadyToInvoke
+        , onChange = ChangedDebouncer
+        }
 
 
 -- VIEW
