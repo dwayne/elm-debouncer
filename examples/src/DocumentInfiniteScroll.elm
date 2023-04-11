@@ -4,7 +4,7 @@ port module DocumentInfiniteScroll exposing (main)
 -- https://css-tricks.com/debouncing-throttling-explained-examples/#aa-infinite-scrolling.
 
 import Browser as B
-import Debouncer exposing (Debouncer)
+import Debouncer2 as Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
@@ -21,6 +21,16 @@ main =
         , subscriptions = subscriptions
         }
 
+-- CONSTANTS
+
+
+debouncerConfig : Debouncer.Config ScrollEvent Msg
+debouncerConfig =
+    Debouncer.throttle
+        { wait = 300
+        , onReady = ReadyToCheck
+        , onChange = ChangedDebouncer
+        }
 
 
 -- MODEL
@@ -40,7 +50,7 @@ blocksPerPage =
 init : () -> ( Model, Cmd msg )
 init _ =
     ( { blocks = blocksPerPage
-      , debouncer = Debouncer.throttle 300
+      , debouncer = Debouncer.init
       }
     , Cmd.none
     )
@@ -53,7 +63,7 @@ init _ =
 type Msg
     = Scrolled JE.Value
     | ReadyToCheck ScrollEvent
-    | ChangedDebouncer (Debouncer.Msg Msg ScrollEvent)
+    | ChangedDebouncer Debouncer.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -64,12 +74,7 @@ update msg model =
                 Ok event ->
                     let
                         ( debouncer, cmd ) =
-                            Debouncer.call
-                                { onReady = ReadyToCheck
-                                , onChange = ChangedDebouncer
-                                }
-                                event
-                                model.debouncer
+                            Debouncer.call debouncerConfig event model.debouncer
                     in
                     ( { model | debouncer = debouncer }
                     , cmd
@@ -98,10 +103,7 @@ update msg model =
         ChangedDebouncer debouncerMsg ->
             let
                 ( debouncer, cmd ) =
-                    Debouncer.update
-                        ChangedDebouncer
-                        debouncerMsg
-                        model.debouncer
+                    Debouncer.update debouncerConfig debouncerMsg model.debouncer
             in
             ( { model | debouncer = debouncer }
             , cmd
