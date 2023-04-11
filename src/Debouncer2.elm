@@ -1,25 +1,20 @@
 module Debouncer2 exposing
     ( Config
+    , DebounceOptions
     , Debouncer
+    , LeadingOptions
     , Msg
-    , init
+    , ThrottleOptions
+    , TrailingOptions
     , call
     , cancel
     , debounce
+    , init
     , leading
     , throttle
     , trailing
     , update
     )
-
---
--- N.B. I decided to try this API due to the following comment
--- https://github.com/hayleigh-dot-dev/elm-limiter/issues/2.
---
--- The advice:
---
--- ... never put functions in your Model or Msg types.
---
 
 import Process
 import Task
@@ -53,12 +48,14 @@ type Config a msg
         }
 
 
-trailing
-    : { wait : Int
-      , onReady : a -> msg
-      , onChange : Msg -> msg
-      }
-    -> Config a msg
+type alias TrailingOptions a msg =
+    { wait : Int
+    , onReady : a -> msg
+    , onChange : Msg -> msg
+    }
+
+
+trailing : TrailingOptions a msg -> Config a msg
 trailing { wait, onReady, onChange } =
     debounce
         { invokeOnLeading = False
@@ -70,12 +67,11 @@ trailing { wait, onReady, onChange } =
         }
 
 
-leading
-    : { wait : Int
-      , onReady : a -> msg
-      , onChange : Msg -> msg
-      }
-    -> Config a msg
+type alias LeadingOptions a msg =
+    TrailingOptions a msg
+
+
+leading : LeadingOptions a msg -> Config a msg
 leading { wait, onReady, onChange } =
     debounce
         { invokeOnLeading = True
@@ -87,12 +83,11 @@ leading { wait, onReady, onChange } =
         }
 
 
-throttle
-    : { wait : Int
-      , onReady : a -> msg
-      , onChange : Msg -> msg
-      }
-    -> Config a msg
+type alias ThrottleOptions a msg =
+    TrailingOptions a msg
+
+
+throttle : ThrottleOptions a msg -> Config a msg
 throttle { wait, onReady, onChange } =
     debounce
         { invokeOnLeading = True
@@ -104,15 +99,17 @@ throttle { wait, onReady, onChange } =
         }
 
 
-debounce
-    : { invokeOnLeading : Bool
-      , invokeOnTrailing : Bool
-      , wait : Int
-      , maxWait : Maybe Int
-      , onReady : a -> msg
-      , onChange : Msg -> msg
-      }
-    -> Config a msg
+type alias DebounceOptions a msg =
+    { invokeOnLeading : Bool
+    , invokeOnTrailing : Bool
+    , wait : Int
+    , maxWait : Maybe Int
+    , onReady : a -> msg
+    , onChange : Msg -> msg
+    }
+
+
+debounce : DebounceOptions a msg -> Config a msg
 debounce { invokeOnTrailing, invokeOnLeading, wait, maxWait, onReady, onChange } =
     let
         nonNegativeWait =
@@ -187,7 +184,7 @@ type Msg
 
 
 update : Config a msg -> Msg -> Debouncer a -> ( Debouncer a, Cmd msg )
-update (Config config) msg (Debouncer state as debouncer) =
+update (Config config) msg ((Debouncer state) as debouncer) =
     case msg of
         WaitTimerExpired incomingId ->
             if incomingId == state.waitId then
@@ -195,7 +192,7 @@ update (Config config) msg (Debouncer state as debouncer) =
                 , let
                     shouldInvoke =
                         config.invokeOnTrailing
-                            && ((config.invokeOnLeading && state.numCalls > 1) || not config.invokeOnLeading)
+                            && (not config.invokeOnLeading || state.numCalls > 1)
                   in
                   if shouldInvoke then
                     state.lastArg
