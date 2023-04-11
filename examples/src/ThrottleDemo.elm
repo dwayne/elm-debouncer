@@ -1,7 +1,7 @@
 module ThrottleDemo exposing (main)
 
 import Browser as B
-import Debouncer exposing (Debouncer)
+import Debouncer2 as Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
 import Lib.Timer as Timer exposing (Timer)
@@ -44,8 +44,8 @@ init _ =
       , throttledEvents = []
       , isRunning = False
       , timer = Timer.init
-      , debouncer = Debouncer.trailing <| wait + 5
-      , throttler = Debouncer.throttle wait
+      , debouncer = Debouncer.init
+      , throttler = Debouncer.init
       , currentColor = 2
       , rawColor = 0
       }
@@ -62,11 +62,11 @@ type Msg
     | GotEvent
     | Stopped
     | TimerExpired
-    | ChangedTimer (Timer.Msg Msg)
+    | ChangedTimer Timer.Msg
     | ReadyToInvokeOnTrailing
-    | ChangedDebouncer (Debouncer.Msg Msg ())
+    | ChangedDebouncer Debouncer.Msg
     | ReadyToInvoke
-    | ChangedThrottler (Debouncer.Msg Msg ())
+    | ChangedThrottler Debouncer.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -75,12 +75,7 @@ update msg model =
         Started ->
             let
                 ( timer, cmd ) =
-                    Timer.setInterval
-                        { onExpire = TimerExpired
-                        , onChange = ChangedTimer
-                        }
-                        sampleRate
-                        model.timer
+                    Timer.setInterval timerConfig model.timer
             in
             ( { model | isRunning = True, timer = timer }
             , cmd
@@ -89,20 +84,10 @@ update msg model =
         GotEvent ->
             let
                 ( debouncer, debouncerCmd ) =
-                    Debouncer.call
-                        { onReady = always ReadyToInvokeOnTrailing
-                        , onChange = ChangedDebouncer
-                        }
-                        ()
-                        model.debouncer
+                    Debouncer.call debouncerConfig () model.debouncer
 
                 ( throttler, throttlerCmd ) =
-                    Debouncer.call
-                        { onReady = always ReadyToInvoke
-                        , onChange = ChangedThrottler
-                        }
-                        ()
-                        model.throttler
+                    Debouncer.call throttlerConfig () model.throttler
             in
             ( { model
                 | debouncer = debouncer
@@ -162,7 +147,7 @@ update msg model =
 
         ChangedTimer timerMsg ->
             ( model
-            , Timer.update ChangedTimer timerMsg model.timer
+            , Timer.update timerConfig timerMsg model.timer
             )
 
         ReadyToInvokeOnTrailing ->
@@ -184,10 +169,7 @@ update msg model =
         ChangedDebouncer debouncerMsg ->
             let
                 ( debouncer, cmd ) =
-                    Debouncer.update
-                        ChangedDebouncer
-                        debouncerMsg
-                        model.debouncer
+                    Debouncer.update debouncerConfig debouncerMsg model.debouncer
             in
             ( { model | debouncer = debouncer }
             , cmd
@@ -212,15 +194,38 @@ update msg model =
         ChangedThrottler throttlerMsg ->
             let
                 ( throttler, cmd ) =
-                    Debouncer.update
-                        ChangedThrottler
-                        throttlerMsg
-                        model.throttler
+                    Debouncer.update throttlerConfig throttlerMsg model.throttler
             in
             ( { model | throttler = throttler }
             , cmd
             )
 
+
+timerConfig : Timer.Config Msg
+timerConfig =
+    Timer.config
+        { wait = sampleRate
+        , onExpire = TimerExpired
+        , onChange = ChangedTimer
+        }
+
+
+debouncerConfig : Debouncer.Config () Msg
+debouncerConfig =
+    Debouncer.trailing
+        { wait = 4 * sampleRate + 5
+        , onReady = always ReadyToInvokeOnTrailing
+        , onChange = ChangedDebouncer
+        }
+
+
+throttlerConfig : Debouncer.Config () Msg
+throttlerConfig =
+    Debouncer.throttle
+        { wait = 4 * sampleRate
+        , onReady = always ReadyToInvoke
+        , onChange = ChangedThrottler
+        }
 
 
 -- VIEW
