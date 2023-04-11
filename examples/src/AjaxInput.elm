@@ -22,6 +22,7 @@ main =
         }
 
 
+
 -- CONSTANTS
 
 
@@ -41,6 +42,7 @@ timerConfig =
         , onExpire = GotResult
         , onChange = ChangedTimer
         }
+
 
 
 -- MODEL

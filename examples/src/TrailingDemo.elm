@@ -47,6 +47,7 @@ init _ =
     )
 
 
+
 -- UPDATE
 
 
@@ -174,6 +175,7 @@ debouncerConfig =
         , onReady = always ReadyToInvoke
         , onChange = ChangedDebouncer
         }
+
 
 
 -- VIEW

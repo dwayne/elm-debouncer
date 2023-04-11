@@ -21,6 +21,7 @@ main =
         }
 
 
+
 -- MODEL
 
 
@@ -66,14 +67,14 @@ update msg model =
     case msg of
         EnteredUsername ->
             ( { model
-              | status = Normal
-              , timer =
-                  case model.status of
-                      Checking _ ->
-                          Timer.cancel model.timer
+                | status = Normal
+                , timer =
+                    case model.status of
+                        Checking _ ->
+                            Timer.cancel model.timer
 
-                      _ ->
-                          model.timer
+                        _ ->
+                            model.timer
               }
             , Cmd.none
             )
@@ -135,6 +136,7 @@ timerConfig =
         , onExpire = TimerExpired
         , onChange = ChangedTimer
         }
+
 
 
 -- VIEW

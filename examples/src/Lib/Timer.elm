@@ -23,19 +23,19 @@ init =
     Timer 0
 
 
-type Config msg =
-    Config
+type Config msg
+    = Config
         { wait : Int
         , onExpire : msg
         , onChange : Msg -> msg
         }
 
 
-config
-    : { wait : Int
-      , onExpire : msg
-      , onChange : Msg -> msg
-      }
+config :
+    { wait : Int
+    , onExpire : msg
+    , onChange : Msg -> msg
+    }
     -> Config msg
 config { wait, onExpire, onChange } =
     Config

@@ -30,6 +30,7 @@ init initialValue =
         , debouncer = Debouncer.init
         }
 
+
 type Config msg
     = Config
         { debouncerConfig : Debouncer.Config String Msg
@@ -39,12 +40,12 @@ type Config msg
         }
 
 
-config
-    : { wait : Int
-      , onInput : String -> msg
-      , onReady : String -> msg
-      , onChange : Msg -> msg
-      }
+config :
+    { wait : Int
+    , onInput : String -> msg
+    , onReady : String -> msg
+    , onChange : Msg -> msg
+    }
     -> Config msg
 config { wait, onInput, onReady, onChange } =
     Config

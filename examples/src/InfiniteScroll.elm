@@ -20,6 +20,8 @@ main =
         , subscriptions = always Sub.none
         }
 
+
+
 -- CONSTANTS
 
 
@@ -30,6 +32,7 @@ debouncerConfig =
         , onReady = ReadyToCheck
         , onChange = ChangedDebouncer
         }
+
 
 
 -- MODEL

@@ -19,6 +19,7 @@ main =
         }
 
 
+
 -- CONSTANTS
 
 
@@ -38,6 +39,7 @@ decrDConfig =
         , onReady = always ReadyToDecrement
         , onChange = ChangedDecrD
         }
+
 
 
 -- MODEL
