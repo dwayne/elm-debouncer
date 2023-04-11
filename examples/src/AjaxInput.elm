@@ -5,7 +5,7 @@ module AjaxInput exposing (main)
 
 import Browser as B
 import Browser.Events as BE
-import Debouncer exposing (Debouncer)
+import Debouncer2 as Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
@@ -21,6 +21,26 @@ main =
         , subscriptions = always Sub.none
         }
 
+
+-- CONSTANTS
+
+
+debouncerConfig : Debouncer.Config String Msg
+debouncerConfig =
+    Debouncer.trailing
+        { wait = 1300
+        , onReady = ReadyToInvoke
+        , onChange = ChangedDebouncer
+        }
+
+
+timerConfig : Timer.Config Msg
+timerConfig =
+    Timer.config
+        { wait = 2000
+        , onExpire = GotResult
+        , onChange = ChangedTimer
+        }
 
 
 -- MODEL
@@ -48,14 +68,7 @@ type Status
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    let
-        debouncer =
-            Debouncer.trailing 1300
-
-        timer =
-            Timer.init
-    in
-    ( Model "" debouncer timer Initial NotTyping
+    ( Model "" Debouncer.init Timer.init Initial NotTyping
     , Cmd.none
     )
 
@@ -67,9 +80,9 @@ init _ =
 type Msg
     = EnteredQuery String
     | ReadyToInvoke String
-    | ChangedDebouncer (Debouncer.Msg Msg String)
+    | ChangedDebouncer Debouncer.Msg
     | GotResult
-    | ChangedTimer (Timer.Msg Msg)
+    | ChangedTimer Timer.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -78,12 +91,7 @@ update msg model =
         EnteredQuery query ->
             let
                 ( debouncer, cmd ) =
-                    Debouncer.call
-                        { onReady = ReadyToInvoke
-                        , onChange = ChangedDebouncer
-                        }
-                        query
-                        model.debouncer
+                    Debouncer.call debouncerConfig query model.debouncer
             in
             ( { model
                 | query = query
@@ -104,12 +112,7 @@ update msg model =
             else
                 let
                     ( timer, cmd ) =
-                        Timer.setTimeout
-                            { onExpire = GotResult
-                            , onChange = ChangedTimer
-                            }
-                            2000
-                            model.timer
+                        Timer.setTimeout timerConfig model.timer
                 in
                 ( { model | result = Loading, timer = timer }
                 , cmd
@@ -118,10 +121,7 @@ update msg model =
         ChangedDebouncer debouncerMsg ->
             let
                 ( debouncer, cmd ) =
-                    Debouncer.update
-                        ChangedDebouncer
-                        debouncerMsg
-                        model.debouncer
+                    Debouncer.update debouncerConfig debouncerMsg model.debouncer
             in
             ( { model | debouncer = debouncer }
             , cmd
@@ -134,7 +134,7 @@ update msg model =
 
         ChangedTimer timerMsg ->
             ( model
-            , Timer.update ChangedTimer timerMsg model.timer
+            , Timer.update timerConfig timerMsg model.timer
             )
 
 

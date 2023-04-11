@@ -1,7 +1,9 @@
 module Lib.Timer exposing
-    ( Msg
+    ( Config
+    , Msg
     , Timer
     , cancel
+    , config
     , init
     , setInterval
     , setTimeout
@@ -21,62 +23,81 @@ init =
     Timer 0
 
 
-type alias Options msg =
-    { onExpire : msg
-    , onChange : Msg msg -> msg
-    }
+type Config msg =
+    Config
+        { wait : Int
+        , onExpire : msg
+        , onChange : Msg -> msg
+        }
 
 
-setTimeout : Options msg -> Int -> Timer -> ( Timer, Cmd msg )
-setTimeout { onExpire, onChange } delay (Timer id) =
+config
+    : { wait : Int
+      , onExpire : msg
+      , onChange : Msg -> msg
+      }
+    -> Config msg
+config { wait, onExpire, onChange } =
+    Config
+        { wait = max 0 wait
+        , onExpire = onExpire
+        , onChange = onChange
+        }
+
+
+setTimeout : Config msg -> Timer -> ( Timer, Cmd msg )
+setTimeout (Config c) (Timer id) =
     let
         newId =
             id + 1
     in
     ( Timer newId
-    , sleep delay (Timeout newId onExpire)
-        |> Cmd.map onChange
+    , Timeout newId
+        |> sleep c.wait
+        |> Cmd.map c.onChange
     )
 
 
-setInterval : Options msg -> Int -> Timer -> ( Timer, Cmd msg )
-setInterval { onExpire, onChange } delay (Timer id) =
+setInterval : Config msg -> Timer -> ( Timer, Cmd msg )
+setInterval (Config c) (Timer id) =
     let
         newId =
             id + 1
     in
     ( Timer newId
-    , sleep delay (Interval delay newId onExpire)
-        |> Cmd.map onChange
+    , Interval newId
+        |> sleep c.wait
+        |> Cmd.map c.onChange
     )
 
 
 cancel : Timer -> Timer
 cancel (Timer id) =
-    Timer (id + 1)
+    Timer <| id + 1
 
 
-type Msg msg
-    = Timeout Int msg
-    | Interval Int Int msg
+type Msg
+    = Timeout Int
+    | Interval Int
 
 
-update : (Msg msg -> msg) -> Msg msg -> Timer -> Cmd msg
-update onChange msg (Timer id) =
+update : Config msg -> Msg -> Timer -> Cmd msg
+update (Config c) msg (Timer id) =
     case msg of
-        Timeout incomingId onExpire ->
+        Timeout incomingId ->
             if incomingId == id then
-                dispatch onExpire
+                dispatch c.onExpire
 
             else
                 Cmd.none
 
-        Interval delay incomingId onExpire ->
+        Interval incomingId ->
             if incomingId == id then
                 Cmd.batch
-                    [ dispatch onExpire
-                    , sleep delay (Interval delay id onExpire)
-                        |> Cmd.map onChange
+                    [ dispatch c.onExpire
+                    , Interval id
+                        |> sleep c.wait
+                        |> Cmd.map c.onChange
                     ]
 
             else
