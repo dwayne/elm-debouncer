@@ -1,11 +1,15 @@
 module Debouncer exposing
     ( Config
+    , DebounceOptions
     , Debouncer
+    , LeadingOptions
     , Msg
-    , Options
+    , ThrottleOptions
+    , TrailingOptions
     , call
     , cancel
     , debounce
+    , init
     , leading
     , throttle
     , trailing
@@ -17,15 +21,7 @@ import Task
 
 
 type Debouncer a
-    = Debouncer Config (State a)
-
-
-type alias Config =
-    { invokeOnLeading : Bool
-    , invokeOnTrailing : Bool
-    , wait : Int
-    , maxWait : Maybe Int
-    }
+    = Debouncer (State a)
 
 
 type alias State a =
@@ -36,43 +32,85 @@ type alias State a =
     }
 
 
-initState : State a
-initState =
-    State 0 0 0 Nothing
+init : Debouncer a
+init =
+    Debouncer <| State 0 0 0 Nothing
 
 
-trailing : Int -> Debouncer a
-trailing wait =
+type Config a msg
+    = Config
+        { invokeOnLeading : Bool
+        , invokeOnTrailing : Bool
+        , wait : Int
+        , maxWait : Maybe Int
+        , onReady : a -> msg
+        , onChange : Msg -> msg
+        }
+
+
+type alias TrailingOptions a msg =
+    { wait : Int
+    , onReady : a -> msg
+    , onChange : Msg -> msg
+    }
+
+
+trailing : TrailingOptions a msg -> Config a msg
+trailing { wait, onReady, onChange } =
     debounce
         { invokeOnLeading = False
         , invokeOnTrailing = True
         , wait = wait
         , maxWait = Nothing
+        , onReady = onReady
+        , onChange = onChange
         }
 
 
-leading : Int -> Debouncer a
-leading wait =
+type alias LeadingOptions a msg =
+    TrailingOptions a msg
+
+
+leading : LeadingOptions a msg -> Config a msg
+leading { wait, onReady, onChange } =
     debounce
         { invokeOnLeading = True
         , invokeOnTrailing = False
         , wait = wait
         , maxWait = Nothing
+        , onReady = onReady
+        , onChange = onChange
         }
 
 
-throttle : Int -> Debouncer a
-throttle wait =
+type alias ThrottleOptions a msg =
+    TrailingOptions a msg
+
+
+throttle : ThrottleOptions a msg -> Config a msg
+throttle { wait, onReady, onChange } =
     debounce
         { invokeOnLeading = True
         , invokeOnTrailing = True
         , wait = wait
         , maxWait = Just wait
+        , onReady = onReady
+        , onChange = onChange
         }
 
 
-debounce : Config -> Debouncer a
-debounce { invokeOnTrailing, invokeOnLeading, wait, maxWait } =
+type alias DebounceOptions a msg =
+    { invokeOnLeading : Bool
+    , invokeOnTrailing : Bool
+    , wait : Int
+    , maxWait : Maybe Int
+    , onReady : a -> msg
+    , onChange : Msg -> msg
+    }
+
+
+debounce : DebounceOptions a msg -> Config a msg
+debounce { invokeOnTrailing, invokeOnLeading, wait, maxWait, onReady, onChange } =
     let
         nonNegativeWait =
             max wait 0
@@ -80,18 +118,19 @@ debounce { invokeOnTrailing, invokeOnLeading, wait, maxWait } =
         nonNegativeMaxWait =
             Maybe.map (max nonNegativeWait) maxWait
     in
-    Debouncer
+    Config
         { invokeOnLeading = invokeOnLeading
         , invokeOnTrailing = invokeOnTrailing
         , wait = nonNegativeWait
         , maxWait = nonNegativeMaxWait
+        , onReady = onReady
+        , onChange = onChange
         }
-        initState
 
 
 cancel : Debouncer a -> Debouncer a
-cancel (Debouncer config state) =
-    Debouncer config (clearState state)
+cancel (Debouncer state) =
+    Debouncer <| clearState state
 
 
 clearState : State a -> State a
@@ -103,14 +142,8 @@ clearState state =
     }
 
 
-type alias Options msg a =
-    { onReady : a -> msg
-    , onChange : Msg msg a -> msg
-    }
-
-
-call : Options msg a -> a -> Debouncer a -> ( Debouncer a, Cmd msg )
-call { onReady, onChange } arg (Debouncer config state) =
+call : Config a msg -> a -> Debouncer a -> ( Debouncer a, Cmd msg )
+call (Config config) arg (Debouncer state) =
     let
         newWaitId =
             state.waitId + 1
@@ -118,7 +151,7 @@ call { onReady, onChange } arg (Debouncer config state) =
         numCalls =
             state.numCalls + 1
     in
-    ( Debouncer config
+    ( Debouncer
         { state
             | waitId = newWaitId
             , numCalls = numCalls
@@ -126,16 +159,18 @@ call { onReady, onChange } arg (Debouncer config state) =
         }
     , Cmd.batch
         [ if config.invokeOnLeading && numCalls == 1 then
-            dispatch (onReady arg)
+            dispatch <| config.onReady arg
 
           else
             Cmd.none
-        , sleep config.wait (WaitTimerExpired newWaitId onReady)
-            |> Cmd.map onChange
+        , WaitTimerExpired newWaitId
+            |> sleep config.wait
+            |> Cmd.map config.onChange
         , case ( config.maxWait, state.lastArg ) of
             ( Just maxWait, Nothing ) ->
-                sleep maxWait (MaxWaitTimerExpired state.maxWaitId onReady)
-                    |> Cmd.map onChange
+                MaxWaitTimerExpired state.maxWaitId
+                    |> sleep maxWait
+                    |> Cmd.map config.onChange
 
             _ ->
                 Cmd.none
@@ -143,25 +178,25 @@ call { onReady, onChange } arg (Debouncer config state) =
     )
 
 
-type Msg msg a
-    = WaitTimerExpired Int (a -> msg)
-    | MaxWaitTimerExpired Int (a -> msg)
+type Msg
+    = WaitTimerExpired Int
+    | MaxWaitTimerExpired Int
 
 
-update : (Msg msg a -> msg) -> Msg msg a -> Debouncer a -> ( Debouncer a, Cmd msg )
-update onChange msg ((Debouncer config state) as debouncer) =
+update : Config a msg -> Msg -> Debouncer a -> ( Debouncer a, Cmd msg )
+update (Config config) msg ((Debouncer state) as debouncer) =
     case msg of
-        WaitTimerExpired incomingId onReady ->
+        WaitTimerExpired incomingId ->
             if incomingId == state.waitId then
-                ( Debouncer config (clearState state)
+                ( Debouncer <| clearState state
                 , let
                     shouldInvoke =
                         config.invokeOnTrailing
-                            && ((config.invokeOnLeading && state.numCalls > 1) || not config.invokeOnLeading)
+                            && (not config.invokeOnLeading || state.numCalls > 1)
                   in
                   if shouldInvoke then
                     state.lastArg
-                        |> Maybe.map (dispatch << onReady)
+                        |> Maybe.map (dispatch << config.onReady)
                         |> Maybe.withDefault Cmd.none
 
                   else
@@ -173,13 +208,13 @@ update onChange msg ((Debouncer config state) as debouncer) =
                 , Cmd.none
                 )
 
-        MaxWaitTimerExpired incomingId onReady ->
+        MaxWaitTimerExpired incomingId ->
             if incomingId == state.maxWaitId then
                 let
                     newMaxWaitId =
                         state.maxWaitId + 1
                 in
-                ( Debouncer config
+                ( Debouncer
                     { state
                         | maxWaitId = newMaxWaitId
                         , numCalls = 1
@@ -187,12 +222,13 @@ update onChange msg ((Debouncer config state) as debouncer) =
                 , if state.numCalls > 1 then
                     Cmd.batch
                         [ state.lastArg
-                            |> Maybe.map (dispatch << onReady)
+                            |> Maybe.map (dispatch << config.onReady)
                             |> Maybe.withDefault Cmd.none
                         , case config.maxWait of
                             Just maxWait ->
-                                sleep maxWait (MaxWaitTimerExpired newMaxWaitId onReady)
-                                    |> Cmd.map onChange
+                                MaxWaitTimerExpired newMaxWaitId
+                                    |> sleep maxWait
+                                    |> Cmd.map config.onChange
 
                             Nothing ->
                                 Cmd.none

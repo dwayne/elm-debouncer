@@ -1,7 +1,7 @@
 module LeadingDemo exposing (main)
 
 import Browser as B
-import Debouncer2 as Debouncer exposing (Debouncer)
+import Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
 import Lib.Timer as Timer exposing (Timer)

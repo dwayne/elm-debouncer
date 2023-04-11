@@ -4,7 +4,7 @@ module Counter exposing (main)
 -- https://discourse.elm-lang.org/t/how-to-do-debouncing/8637.
 
 import Browser as B
-import Debouncer2 as Debouncer exposing (Debouncer)
+import Debouncer exposing (Debouncer)
 import Html as H
 import Html.Events as HE
 

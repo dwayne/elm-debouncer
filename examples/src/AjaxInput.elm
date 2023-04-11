@@ -5,7 +5,7 @@ module AjaxInput exposing (main)
 
 import Browser as B
 import Browser.Events as BE
-import Debouncer2 as Debouncer exposing (Debouncer)
+import Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
