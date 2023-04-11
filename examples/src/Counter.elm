@@ -4,7 +4,7 @@ module Counter exposing (main)
 -- https://discourse.elm-lang.org/t/how-to-do-debouncing/8637.
 
 import Browser as B
-import Debouncer exposing (Debouncer)
+import Debouncer2 as Debouncer exposing (Debouncer)
 import Html as H
 import Html.Events as HE
 
@@ -18,6 +18,26 @@ main =
         , subscriptions = always Sub.none
         }
 
+
+-- CONSTANTS
+
+
+incrDConfig : Debouncer.Config () Msg
+incrDConfig =
+    Debouncer.leading
+        { wait = 1000
+        , onReady = always ReadyToIncrement
+        , onChange = ChangedIncrD
+        }
+
+
+decrDConfig : Debouncer.Config () Msg
+decrDConfig =
+    Debouncer.leading
+        { wait = 5000
+        , onReady = always ReadyToDecrement
+        , onChange = ChangedDecrD
+        }
 
 
 -- MODEL
@@ -33,8 +53,8 @@ type alias Model =
 init : () -> ( Model, Cmd msg )
 init _ =
     ( { count = 0
-      , incrD = Debouncer.leading 1000
-      , decrD = Debouncer.leading 5000
+      , incrD = Debouncer.init
+      , decrD = Debouncer.init
       }
     , Cmd.none
     )
@@ -47,10 +67,10 @@ init _ =
 type Msg
     = ClickedIncrement
     | ReadyToIncrement
-    | ChangedIncrD (Debouncer.Msg Msg ())
+    | ChangedIncrD Debouncer.Msg
     | ClickedDecrement
     | ReadyToDecrement
-    | ChangedDecrD (Debouncer.Msg Msg ())
+    | ChangedDecrD Debouncer.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -59,12 +79,7 @@ update msg model =
         ClickedIncrement ->
             let
                 ( incrD, cmd ) =
-                    Debouncer.call
-                        { onReady = always ReadyToIncrement
-                        , onChange = ChangedIncrD
-                        }
-                        ()
-                        model.incrD
+                    Debouncer.call incrDConfig () model.incrD
             in
             ( { model | incrD = incrD }
             , cmd
@@ -78,7 +93,7 @@ update msg model =
         ChangedIncrD incrDMsg ->
             let
                 ( incrD, cmd ) =
-                    Debouncer.update ChangedIncrD incrDMsg model.incrD
+                    Debouncer.update incrDConfig incrDMsg model.incrD
             in
             ( { model | incrD = incrD }
             , cmd
@@ -87,12 +102,7 @@ update msg model =
         ClickedDecrement ->
             let
                 ( decrD, cmd ) =
-                    Debouncer.call
-                        { onReady = always ReadyToDecrement
-                        , onChange = ChangedDecrD
-                        }
-                        ()
-                        model.decrD
+                    Debouncer.call decrDConfig () model.decrD
             in
             ( { model | decrD = decrD }
             , cmd
@@ -106,7 +116,7 @@ update msg model =
         ChangedDecrD decrDMsg ->
             let
                 ( decrD, cmd ) =
-                    Debouncer.update ChangedDecrD decrDMsg model.decrD
+                    Debouncer.update decrDConfig decrDMsg model.decrD
             in
             ( { model | decrD = decrD }
             , cmd
