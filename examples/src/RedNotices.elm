@@ -12,6 +12,7 @@ import Html.Attributes as HA
 import Html.Events as HE
 import Http
 import Json.Decode as JD
+import Url.Builder as UB
 
 
 main : Program () Model Msg
@@ -92,9 +93,18 @@ update msg model =
 performSearch : String -> Cmd Msg
 performSearch query =
     Http.get
-        { url = "https://ws-public.interpol.int/notices/v1/red?forename=" ++ query ++ "&resultPerPage=200"
+        { url = searchUrl query
         , expect = Http.expectJson GotSearchResult noticesDecoder
         }
+
+
+searchUrl : String -> String
+searchUrl query =
+    UB.crossOrigin "https://ws-public.interpol.int"
+        [ "notices", "v1", "red" ]
+        [ UB.string "forename" query
+        , UB.int "resultsPerPage" 200
+        ]
 
 
 noticesDecoder : JD.Decoder (List Notice)
