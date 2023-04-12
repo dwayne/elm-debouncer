@@ -7,6 +7,7 @@ module RedNotices exposing (main)
 --
 
 import Browser as B
+import Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
@@ -31,6 +32,7 @@ main =
 
 type alias Model =
     { query : String
+    , debouncer : Debouncer String
     , searchResult : RemoteData (List Notice)
     }
 
@@ -50,6 +52,7 @@ type alias Notice =
 init : () -> ( Model, Cmd msg )
 init _ =
     ( { query = ""
+      , debouncer = Debouncer.init
       , searchResult = Initial
       }
     , Cmd.none
@@ -62,6 +65,8 @@ init _ =
 
 type Msg
     = InputQuery String
+    | ReadyToSearch String
+    | ChangedQueryDebouncer Debouncer.Msg
     | GotSearchResult (Result Http.Error (List Notice))
 
 
@@ -69,15 +74,37 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         InputQuery query ->
+            let
+                ( debouncer, cmd ) =
+                    Debouncer.call debouncerConfig query model.debouncer
+            in
+            ( { model | query = query, debouncer = debouncer }
+            , cmd
+            )
+
+        ReadyToSearch rawQuery ->
+            let
+                query =
+                    String.trim rawQuery
+            in
             if String.isEmpty query then
-                ( { model | query = "", searchResult = Initial }
+                ( { model | searchResult = Initial }
                 , Cmd.none
                 )
 
             else
-                ( { model | query = query }
+                ( { model | searchResult = Loading }
                 , performSearch query
                 )
+
+        ChangedQueryDebouncer debouncerMsg ->
+            let
+                ( debouncer, cmd ) =
+                    Debouncer.update debouncerConfig debouncerMsg model.debouncer
+            in
+            ( { model | debouncer = debouncer }
+            , cmd
+            )
 
         GotSearchResult (Ok notices) ->
             ( { model | searchResult = Success notices }
@@ -88,6 +115,15 @@ update msg model =
             ( { model | searchResult = Error }
             , Cmd.none
             )
+
+
+debouncerConfig : Debouncer.Config String Msg
+debouncerConfig =
+    Debouncer.trailing
+        { wait = 500
+        , onReady = ReadyToSearch
+        , onChange = ChangedQueryDebouncer
+        }
 
 
 performSearch : String -> Cmd Msg
@@ -140,16 +176,25 @@ view { query, searchResult } =
                 H.text ""
 
             Loading ->
-                H.p [] [ H.text "Loading..." ]
+                viewText "Loading..."
 
             Success notices ->
-                notices
-                    |> List.map (\notice -> H.li [] [ viewNotice notice ])
-                    |> H.ul []
+                if List.isEmpty notices then
+                    viewText "No results found."
+
+                else
+                    notices
+                        |> List.map (\notice -> H.li [] [ viewNotice notice ])
+                        |> H.ul []
 
             Error ->
-                H.p [] [ H.text "Sorry, unable to retrieve the notices." ]
+                viewText "Sorry, unable to retrieve the notices."
         ]
+
+
+viewText : String -> H.Html msg
+viewText text =
+    H.p [] [ H.text text ]
 
 
 viewNotice : Notice -> H.Html msg
