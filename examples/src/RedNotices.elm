@@ -10,6 +10,8 @@ import Browser as B
 import Html as H
 import Html.Attributes as HA
 import Html.Events as HE
+import Http
+import Json.Decode as JD
 
 
 main : Program () Model Msg
@@ -22,12 +24,13 @@ main =
         }
 
 
+
 -- MODEL
 
 
 type alias Model =
     { query : String
-    , searchResults : RemoteData (List Notice)
+    , searchResult : RemoteData (List Notice)
     }
 
 
@@ -46,7 +49,7 @@ type alias Notice =
 init : () -> ( Model, Cmd msg )
 init _ =
     ( { query = ""
-      , searchResults = Initial
+      , searchResult = Initial
       }
     , Cmd.none
     )
@@ -58,15 +61,51 @@ init _ =
 
 type Msg
     = InputQuery String
+    | GotSearchResult (Result Http.Error (List Notice))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         InputQuery query ->
-            ( { model | query = query }
+            if String.isEmpty query then
+                ( { model | query = "", searchResult = Initial }
+                , Cmd.none
+                )
+
+            else
+                ( { model | query = query }
+                , performSearch query
+                )
+
+        GotSearchResult (Ok notices) ->
+            ( { model | searchResult = Success notices }
             , Cmd.none
             )
+
+        GotSearchResult (Err _) ->
+            ( { model | searchResult = Error }
+            , Cmd.none
+            )
+
+
+performSearch : String -> Cmd Msg
+performSearch query =
+    Http.get
+        { url = "https://ws-public.interpol.int/notices/v1/red?forename=" ++ query ++ "&resultPerPage=200"
+        , expect = Http.expectJson GotSearchResult noticesDecoder
+        }
+
+
+noticesDecoder : JD.Decoder (List Notice)
+noticesDecoder =
+    JD.at [ "_embedded", "notices" ] (JD.list noticeDecoder)
+
+
+noticeDecoder : JD.Decoder Notice
+noticeDecoder =
+    JD.map Notice
+        (JD.field "forename" JD.string)
 
 
 
@@ -74,7 +113,7 @@ update msg model =
 
 
 view : Model -> H.Html Msg
-view { query, searchResults } =
+view { query, searchResult } =
     H.div []
         [ H.p []
             [ H.input
@@ -86,16 +125,23 @@ view { query, searchResults } =
                 ]
                 []
             ]
-        , case searchResults of
+        , case searchResult of
             Initial ->
                 H.text ""
 
             Loading ->
                 H.p [] [ H.text "Loading..." ]
 
-            Success _ ->
-                H.p [] [ H.text "Successfully got the notices." ]
+            Success notices ->
+                notices
+                    |> List.map (\notice -> H.li [] [ viewNotice notice ])
+                    |> H.ul []
 
             Error ->
                 H.p [] [ H.text "Sorry, unable to retrieve the notices." ]
         ]
+
+
+viewNotice : Notice -> H.Html msg
+viewNotice { forename } =
+    H.text forename
