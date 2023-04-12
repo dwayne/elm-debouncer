@@ -46,6 +46,9 @@ type RemoteData a
 
 type alias Notice =
     { forename : String
+    , name : String
+    , dob : String
+    , thumbnailUrl : Maybe String
     }
 
 
@@ -150,8 +153,11 @@ noticesDecoder =
 
 noticeDecoder : JD.Decoder Notice
 noticeDecoder =
-    JD.map Notice
+    JD.map4 Notice
         (JD.field "forename" JD.string)
+        (JD.field "name" JD.string)
+        (JD.field "date_of_birth" JD.string)
+        (JD.maybe <| JD.at [ "_links", "thumbnail", "href" ] JD.string)
 
 
 
@@ -176,11 +182,11 @@ view { query, searchResult } =
                 H.text ""
 
             Loading ->
-                viewText "Loading..."
+                viewP "Loading..."
 
             Success notices ->
                 if List.isEmpty notices then
-                    viewText "No results found."
+                    viewP "No results found."
 
                 else
                     notices
@@ -188,15 +194,30 @@ view { query, searchResult } =
                         |> H.ul []
 
             Error ->
-                viewText "Sorry, unable to retrieve the notices."
+                viewP "Sorry, unable to retrieve the notices."
         ]
 
 
-viewText : String -> H.Html msg
-viewText text =
-    H.p [] [ H.text text ]
-
-
 viewNotice : Notice -> H.Html msg
-viewNotice { forename } =
-    H.text forename
+viewNotice { forename, name, dob, thumbnailUrl } =
+    H.div []
+        [ case thumbnailUrl of
+            Nothing ->
+                H.text "No image found."
+
+            Just src ->
+                H.img
+                    [ HA.src src
+                    , HA.width 80
+                    , HA.height 80
+                    , HA.alt name
+                    ]
+                    []
+        , viewP <| forename ++ " " ++ name
+        , viewP dob
+        ]
+
+
+viewP : String -> H.Html msg
+viewP text =
+    H.p [] [ H.text text ]
