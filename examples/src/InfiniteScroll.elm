@@ -22,19 +22,6 @@ main =
 
 
 
--- CONSTANTS
-
-
-debouncerConfig : Debouncer.Config ScrollEvent Msg
-debouncerConfig =
-    Debouncer.throttle
-        { wait = 300
-        , onReady = ReadyToCheck
-        , onChange = ChangedDebouncer
-        }
-
-
-
 -- MODEL
 
 
@@ -103,6 +90,15 @@ update msg model =
             ( { model | debouncer = debouncer }
             , cmd
             )
+
+
+debouncerConfig : Debouncer.Config ScrollEvent Msg
+debouncerConfig =
+    Debouncer.throttle
+        { wait = 300
+        , onReady = ReadyToCheck
+        , onChange = ChangedDebouncer
+        }
 
 
 

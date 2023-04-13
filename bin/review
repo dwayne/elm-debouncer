@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+cd "$project" &&  \
+  npx elm-review  \
+    examples/src  \
+    review/src    \
+    src           \
+    "$@"

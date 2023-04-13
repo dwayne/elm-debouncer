@@ -1,7 +1,7 @@
 module RegistrationForm exposing (main)
 
 -- This example is based on
--- https://github.com/Orasund/elm-cookbook/issues/1#issue-456089065
+-- https://github.com/Orasund/elm-cookbook/issues/1#issue-456089065.
 
 import Browser as B
 import Html as H

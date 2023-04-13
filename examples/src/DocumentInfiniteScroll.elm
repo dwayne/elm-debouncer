@@ -7,7 +7,6 @@ import Browser as B
 import Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
-import Html.Events as HE
 import Json.Decode as JD
 import Json.Encode as JE
 
@@ -19,19 +18,6 @@ main =
         , view = view
         , update = update
         , subscriptions = subscriptions
-        }
-
-
-
--- CONSTANTS
-
-
-debouncerConfig : Debouncer.Config ScrollEvent Msg
-debouncerConfig =
-    Debouncer.throttle
-        { wait = 300
-        , onReady = ReadyToCheck
-        , onChange = ChangedDebouncer
         }
 
 
@@ -111,6 +97,15 @@ update msg model =
             ( { model | debouncer = debouncer }
             , cmd
             )
+
+
+debouncerConfig : Debouncer.Config ScrollEvent Msg
+debouncerConfig =
+    Debouncer.throttle
+        { wait = 300
+        , onReady = ReadyToCheck
+        , onChange = ChangedDebouncer
+        }
 
 
 

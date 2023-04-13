@@ -36,10 +36,6 @@ type alias Model =
 
 init : () -> ( Model, Cmd msg )
 init _ =
-    let
-        wait =
-            4 * sampleRate
-    in
     ( { rawEvents = []
       , throttledEvents = []
       , isRunning = False

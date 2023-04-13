@@ -20,28 +20,6 @@ main =
 
 
 
--- CONSTANTS
-
-
-incrDConfig : Debouncer.Config () Msg
-incrDConfig =
-    Debouncer.leading
-        { wait = 1000
-        , onReady = always ReadyToIncrement
-        , onChange = ChangedIncrD
-        }
-
-
-decrDConfig : Debouncer.Config () Msg
-decrDConfig =
-    Debouncer.leading
-        { wait = 5000
-        , onReady = always ReadyToDecrement
-        , onChange = ChangedDecrD
-        }
-
-
-
 -- MODEL
 
 
@@ -123,6 +101,24 @@ update msg model =
             ( { model | decrD = decrD }
             , cmd
             )
+
+
+incrDConfig : Debouncer.Config () Msg
+incrDConfig =
+    Debouncer.leading
+        { wait = 1000
+        , onReady = always ReadyToIncrement
+        , onChange = ChangedIncrD
+        }
+
+
+decrDConfig : Debouncer.Config () Msg
+decrDConfig =
+    Debouncer.leading
+        { wait = 5000
+        , onReady = always ReadyToDecrement
+        , onChange = ChangedDecrD
+        }
 
 
 

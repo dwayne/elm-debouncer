@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "devDependencies": {
+    "elm-review": "^2.9.2"
+  }
+}

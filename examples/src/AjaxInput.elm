@@ -1,10 +1,9 @@
 module AjaxInput exposing (main)
 
 -- This example is based on
--- https://css-tricks.com/debouncing-throttling-explained-examples/#aa-keypress-on-autocomplete-form-with-ajax-request
+-- https://css-tricks.com/debouncing-throttling-explained-examples/#aa-keypress-on-autocomplete-form-with-ajax-request.
 
 import Browser as B
-import Browser.Events as BE
 import Debouncer exposing (Debouncer)
 import Html as H
 import Html.Attributes as HA
@@ -19,28 +18,6 @@ main =
         , view = view
         , update = update
         , subscriptions = always Sub.none
-        }
-
-
-
--- CONSTANTS
-
-
-debouncerConfig : Debouncer.Config String Msg
-debouncerConfig =
-    Debouncer.trailing
-        { wait = 1300
-        , onReady = ReadyToInvoke
-        , onChange = ChangedDebouncer
-        }
-
-
-timerConfig : Timer.Config Msg
-timerConfig =
-    Timer.config
-        { wait = 2000
-        , onExpire = GotResult
-        , onChange = ChangedTimer
         }
 
 
@@ -138,6 +115,24 @@ update msg model =
             ( model
             , Timer.update timerConfig timerMsg model.timer
             )
+
+
+debouncerConfig : Debouncer.Config String Msg
+debouncerConfig =
+    Debouncer.trailing
+        { wait = 1300
+        , onReady = ReadyToInvoke
+        , onChange = ChangedDebouncer
+        }
+
+
+timerConfig : Timer.Config Msg
+timerConfig =
+    Timer.config
+        { wait = 2000
+        , onExpire = GotResult
+        , onChange = ChangedTimer
+        }
 
 
 

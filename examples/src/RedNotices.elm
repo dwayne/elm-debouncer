@@ -1,10 +1,8 @@
 module RedNotices exposing (main)
 
---
 -- This example is based on https://youtu.be/PySFIsgXNZ0.
 --
 -- Search the Interpol database of red notices by a person's forename.
---
 
 import Browser as B
 import Debouncer exposing (Debouncer)
