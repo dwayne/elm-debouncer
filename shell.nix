@@ -3,6 +3,7 @@ let
 in
 pkgs.mkShell {
   packages = [
+    pkgs.caddy
     pkgs.elmPackages.elm
     pkgs.elmPackages.elm-format
     pkgs.nodejs-18_x
@@ -11,6 +12,8 @@ pkgs.mkShell {
   shellHook =
     ''
     export project="$PWD"
+    export build="$project/.build"
+
     export PATH="$project/bin:$PATH"
 
     npm install --loglevel error >/dev/null

@@ -1,7 +1,7 @@
 {
     "type": "package",
     "name": "dwayne/elm-debouncer",
-    "summary": "Take control of when and how often an action is performed using a variety of strategies",
+    "summary": "Take control of when and how often an action is performed",
     "license": "BSD-3-Clause",
     "version": "1.0.0",
     "exposed-modules": [

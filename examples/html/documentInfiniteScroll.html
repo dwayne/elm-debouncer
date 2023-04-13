@@ -48,13 +48,13 @@
   </head>
   <body>
     <div id="documentInfiniteScroll"></div>
-    <script src="/documentInfiniteScroll.js"></script>
+    <script src="{{ROOT}}/documentInfiniteScroll.js"></script>
     <script>
       const app = Elm.DocumentInfiniteScroll.init({
-        node: document.getElementById('documentInfiniteScroll')
+        node: document.getElementById("documentInfiniteScroll")
       });
 
-      document.addEventListener('scroll', () => {
+      document.addEventListener("scroll", () => {
         const t = document.documentElement;
 
         app.ports.onScroll.send({
