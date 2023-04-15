@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>Examples</title>
+
+    <style>
+      body {
+        max-width: 40em;
+      }
+    </style>
   </head>
   <body>
     <h1>Examples</h1>
@@ -25,9 +31,13 @@
 
     <h2>Use Cases</h2>
 
+    <p>These use cases, which come from a variety of sources, are meant to
+    illustrate the versatility of the library in helping you to solve your
+    typical web application development challenges.</p>
+
     <ul>
       <li>
-        <a href="{{ROOT}}/resize.html">Resize</a>
+        <a href="#resize">Resize</a>
       </li>
       <li>
         <a href="{{ROOT}}/ajaxInput.html">Ajax Input</a>
@@ -48,5 +58,16 @@
         <a href="{{ROOT}}/redNotices.html">Red Notices</a>
       </li>
     </ul>
+
+    <h3 id="resize">Resize</h3>
+
+    <p>Many <em>resize</em> events are emitted when resizing a (desktop)
+    browser window. However, we can use a trailing edge debouncer to perform
+    an action once the user stops resizing the browser since we are usually only
+    interested in the final size of the window.</p>
+
+    <p>Have a look at the <a href="{{ROOT}}/resize.html">resize</a> example.</p>
+
+    <p><strong>Source:</strong> <a href="https://css-tricks.com/debouncing-throttling-explained-examples/#aa-resize-example" target="_blank">https://css-tricks.com/debouncing-throttling-explained-examples/#aa-resize-example</a></p>
   </body>
 </html>

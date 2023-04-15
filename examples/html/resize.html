@@ -6,9 +6,12 @@
 
     <title>Resize</title>
     <style>
+      body {
+        max-width: 40em;
+      }
+
       .frame {
         display: flex;
-        flex-direction: row;
       }
 
       .frame__item {
@@ -16,11 +19,21 @@
       }
 
       .panel {
-        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
     </style>
   </head>
   <body>
+    <h1>Resize</h1>
+
+    <p>Please resize the browser window to see the quantity of <em>resize</em> events that are generated.</p>
+
+    <p>Notice that <em>an event is only ever listed under
+    <strong>Debounced resize events</strong> after you stop resizing the
+    window for about half a second.</em></p>
+
     <div id="resize"></div>
     <script src="{{ROOT}}/resize.js"></script>
     <script>

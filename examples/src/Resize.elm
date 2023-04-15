@@ -1,8 +1,5 @@
 module Resize exposing (main)
 
--- This example is based on
--- https://css-tricks.com/debouncing-throttling-explained-examples/#aa-resize-example.
-
 import Browser as B
 import Browser.Events as BE
 import Debouncer exposing (Debouncer)
@@ -50,31 +47,30 @@ init _ =
 
 type Msg
     = ResizedWindow Int Int
-    | ReadyToInvoke Event
+    | ReadyToUseSize Event
     | ChangedDebouncer Debouncer.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ResizedWindow width height ->
+        ResizedWindow w h ->
             let
                 event =
-                    Event width height
+                    Event w h
 
                 ( debouncer, cmd ) =
-                    Debouncer.call
-                        debouncerConfig
-                        event
-                        model.debouncer
+                    Debouncer.call debouncerConfig event model.debouncer
             in
             ( { model | raw = event :: model.raw, debouncer = debouncer }
             , cmd
             )
 
-        ReadyToInvoke event ->
+        ReadyToUseSize event ->
             --
-            -- Here is where you do the work.
+            -- At this point we know that the user has stopped resizing for
+            -- at least half a second. We can now use the final size of the
+            -- window to perform any action we want.
             --
             ( { model | debounced = event :: model.debounced }
             , Cmd.none
@@ -83,10 +79,7 @@ update msg model =
         ChangedDebouncer debouncerMsg ->
             let
                 ( debouncer, cmd ) =
-                    Debouncer.update
-                        debouncerConfig
-                        debouncerMsg
-                        model.debouncer
+                    Debouncer.update debouncerConfig debouncerMsg model.debouncer
             in
             ( { model | debouncer = debouncer }
             , cmd
@@ -97,7 +90,7 @@ debouncerConfig : Debouncer.Config Event Msg
 debouncerConfig =
     Debouncer.trailing
         { wait = 500
-        , onReady = ReadyToInvoke
+        , onReady = ReadyToUseSize
         , onChange = ChangedDebouncer
         }
 
@@ -117,17 +110,17 @@ subscriptions _ =
 
 view : Model -> H.Html msg
 view { raw, debounced } =
-    viewFrame { raw = raw, debounced = debounced }
+    viewFrame raw debounced
 
 
-viewFrame : { raw : List Event, debounced : List Event } -> H.Html msg
-viewFrame { raw, debounced } =
+viewFrame : List Event -> List Event -> H.Html msg
+viewFrame raw debounced =
     H.div [ HA.class "frame" ]
         [ H.div [ HA.class "frame__item" ]
-            [ viewPanel "Raw resize events" raw
+            [ viewPanel "Raw events" raw
             ]
         , H.div [ HA.class "frame__item" ]
-            [ viewPanel "Debounced resize events" debounced
+            [ viewPanel "Debounced events" debounced
             ]
         ]
 
@@ -135,7 +128,7 @@ viewFrame { raw, debounced } =
 viewPanel : String -> List Event -> H.Html msg
 viewPanel title events =
     H.div [ HA.class "panel" ] <|
-        H.h1 [] [ H.text title ]
+        H.h2 [] [ H.text title ]
             :: List.map viewEvent events
 
 
