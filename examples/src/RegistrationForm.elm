@@ -1,8 +1,5 @@
 module RegistrationForm exposing (main)
 
--- This example is based on
--- https://github.com/Orasund/elm-cookbook/issues/1#issue-456089065.
-
 import Browser as B
 import Html as H
 import Html.Attributes as HA
@@ -26,8 +23,8 @@ main =
 
 
 type alias Model =
-    { username : TextInput
-    , status : Status
+    { status : Status
+    , username : TextInput
     , timer : Timer
     }
 
@@ -35,14 +32,14 @@ type alias Model =
 type Status
     = Normal
     | Checking String
-    | Error
     | Success
+    | Error
 
 
 init : () -> ( Model, Cmd msg )
 init _ =
-    ( { username = TextInput.init ""
-      , status = Normal
+    ( { status = Normal
+      , username = TextInput.init ""
       , timer = Timer.init
       }
     , Cmd.none
@@ -54,8 +51,8 @@ init _ =
 
 
 type Msg
-    = EnteredUsername
-    | ReadyToInvoke String
+    = InputUsername
+    | ReadyToCheck String
     | ChangedUsername TextInput.Msg
     | TimerExpired
     | ChangedTimer Timer.Msg
@@ -65,7 +62,7 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        EnteredUsername ->
+        InputUsername ->
             ( { model
                 | status = Normal
                 , timer =
@@ -79,14 +76,24 @@ update msg model =
             , Cmd.none
             )
 
-        ReadyToInvoke username ->
+        ReadyToCheck rawUsername ->
             let
-                ( timer, cmd ) =
-                    Timer.setTimeout timerConfig model.timer
+                username =
+                    String.trim rawUsername
             in
-            ( { model | status = Checking username, timer = timer }
-            , cmd
-            )
+            if String.isEmpty username then
+                ( model
+                , Cmd.none
+                )
+
+            else
+                let
+                    ( timer, cmd ) =
+                        Timer.setTimeout timerConfig model.timer
+                in
+                ( { model | status = Checking username, timer = timer }
+                , cmd
+                )
 
         ChangedUsername usernameMsg ->
             let
@@ -129,6 +136,16 @@ update msg model =
             )
 
 
+textInputConfig : TextInput.Config Msg
+textInputConfig =
+    TextInput.config
+        { wait = 500
+        , onInput = always InputUsername
+        , onReady = ReadyToCheck
+        , onChange = ChangedUsername
+        }
+
+
 timerConfig : Timer.Config Msg
 timerConfig =
     Timer.config
@@ -155,13 +172,7 @@ view { username, status } =
                 Checking s ->
                     H.em
                         []
-                        [ H.text <| "Checking if " ++ s ++ " is free..."
-                        ]
-
-                Error ->
-                    H.span
-                        [ HA.style "color" "red" ]
-                        [ H.text "The username is taken."
+                        [ H.text <| "Checking if \"" ++ s ++ "\" is free..."
                         ]
 
                 Success ->
@@ -169,15 +180,11 @@ view { username, status } =
                         [ HA.style "color" "green" ]
                         [ H.text "The username is available."
                         ]
+
+                Error ->
+                    H.span
+                        [ HA.style "color" "red" ]
+                        [ H.text "The username is already taken."
+                        ]
             ]
         ]
-
-
-textInputConfig : TextInput.Config Msg
-textInputConfig =
-    TextInput.config
-        { wait = 500
-        , onInput = always EnteredUsername
-        , onReady = ReadyToInvoke
-        , onChange = ChangedUsername
-        }
