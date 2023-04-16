@@ -1,7 +1,4 @@
-module AjaxInput exposing (main)
-
--- This example is based on
--- https://css-tricks.com/debouncing-throttling-explained-examples/#aa-keypress-on-autocomplete-form-with-ajax-request.
+module HttpInput exposing (main)
 
 import Browser as B
 import Debouncer exposing (Debouncer)
@@ -26,12 +23,22 @@ main =
 
 
 type alias Model =
-    { query : String
+    { status : Status
+    , query : String
     , debouncer : Debouncer String
+
+    --
+    -- We use a timer to simulate an HTTP request that takes some time to
+    -- successfully complete.
+    --
     , timer : Timer
     , result : RemoteData
-    , status : Status
     }
+
+
+type Status
+    = NotTyping
+    | Typing
 
 
 type RemoteData
@@ -40,14 +47,9 @@ type RemoteData
     | Success
 
 
-type Status
-    = NotTyping
-    | Typing
-
-
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model "" Debouncer.init Timer.init Initial NotTyping
+    ( Model NotTyping "" Debouncer.init Timer.init Initial
     , Cmd.none
     )
 
@@ -57,8 +59,8 @@ init _ =
 
 
 type Msg
-    = EnteredQuery String
-    | ReadyToInvoke String
+    = InputQuery String
+    | ReadyToMakeHTTPRequest String
     | ChangedDebouncer Debouncer.Msg
     | GotResult
     | ChangedTimer Timer.Msg
@@ -67,28 +69,39 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        EnteredQuery query ->
+        InputQuery query ->
             let
                 ( debouncer, cmd ) =
                     Debouncer.call debouncerConfig query model.debouncer
             in
             ( { model
-                | query = query
+                | status = Typing
+                , query = query
                 , debouncer = debouncer
+
+                --
+                -- Cancel any active HTTP request.
+                --
                 , timer = Timer.cancel model.timer
                 , result = Initial
-                , status = Typing
               }
             , cmd
             )
 
-        ReadyToInvoke query ->
+        ReadyToMakeHTTPRequest rawQuery ->
+            let
+                query =
+                    String.trim rawQuery
+            in
             if String.isEmpty query then
                 ( { model | status = NotTyping }
                 , Cmd.none
                 )
 
             else
+                --
+                -- Make the HTTP request.
+                --
                 let
                     ( timer, cmd ) =
                         Timer.setTimeout timerConfig model.timer
@@ -107,7 +120,7 @@ update msg model =
             )
 
         GotResult ->
-            ( { model | query = "", result = Success, status = NotTyping }
+            ( { model | status = NotTyping, query = "", result = Success }
             , Cmd.none
             )
 
@@ -121,7 +134,7 @@ debouncerConfig : Debouncer.Config String Msg
 debouncerConfig =
     Debouncer.trailing
         { wait = 1300
-        , onReady = ReadyToInvoke
+        , onReady = ReadyToMakeHTTPRequest
         , onChange = ChangedDebouncer
         }
 
@@ -145,7 +158,7 @@ view model =
         [ H.p []
             [ case model.status of
                 NotTyping ->
-                    H.text "Type here. I will detect when you stop typing."
+                    H.text "Type in the input box below. I will detect when you stop typing."
 
                 Typing ->
                     H.text "Waiting for more keystrokes..."
@@ -155,16 +168,19 @@ view model =
                 [ HA.type_ "text"
                 , HA.autofocus True
                 , HA.value model.query
-                , HE.onInput EnteredQuery
+                , HE.onInput InputQuery
                 ]
                 []
             ]
         , H.p []
             [ case model.result of
-                Loading ->
-                    H.text "That's enough waiting. Making the ajax request now."
-
-                _ ->
+                Initial ->
                     H.text ""
+
+                Loading ->
+                    H.text "That's enough waiting. I am making the HTTP request now."
+
+                Success ->
+                    H.text "Success!"
             ]
         ]
