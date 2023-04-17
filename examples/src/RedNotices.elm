@@ -1,9 +1,5 @@
 module RedNotices exposing (main)
 
--- This example is based on https://youtu.be/PySFIsgXNZ0.
---
--- Search the Interpol database of red notices by a person's forename.
-
 import Browser as B
 import Debouncer exposing (Debouncer)
 import Html as H
@@ -67,7 +63,7 @@ init _ =
 type Msg
     = InputQuery String
     | ReadyToSearch String
-    | ChangedQueryDebouncer Debouncer.Msg
+    | ChangedDebouncer Debouncer.Msg
     | GotSearchResult (Result Http.Error (List Notice))
 
 
@@ -98,7 +94,7 @@ update msg model =
                 , performSearch query
                 )
 
-        ChangedQueryDebouncer debouncerMsg ->
+        ChangedDebouncer debouncerMsg ->
             let
                 ( debouncer, cmd ) =
                     Debouncer.update debouncerConfig debouncerMsg model.debouncer
@@ -123,7 +119,7 @@ debouncerConfig =
     Debouncer.trailing
         { wait = 500
         , onReady = ReadyToSearch
-        , onChange = ChangedQueryDebouncer
+        , onChange = ChangedDebouncer
         }
 
 
@@ -165,7 +161,8 @@ noticeDecoder =
 view : Model -> H.Html Msg
 view { query, searchResult } =
     H.div []
-        [ H.p []
+        [ viewP "Search the Interpol database of red notices by a person's forename."
+        , H.p []
             [ H.input
                 [ HA.type_ "search"
                 , HA.placeholder "Enter the forename to search"
