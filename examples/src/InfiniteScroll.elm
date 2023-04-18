@@ -1,8 +1,5 @@
 module InfiniteScroll exposing (main)
 
--- This example is based on
--- https://css-tricks.com/debouncing-throttling-explained-examples/#aa-infinite-scrolling.
-
 import Browser as B
 import Debouncer exposing (Debouncer)
 import Html as H
@@ -31,9 +28,11 @@ type alias Model =
     }
 
 
-blocksPerPage : List Int
-blocksPerPage =
-    [ 8, 7, 6, 5, 4, 3, 2, 1 ]
+type alias ScrollEvent =
+    { sceneHeight : Int
+    , viewportY : Int
+    , viewportHeight : Int
+    }
 
 
 init : () -> ( Model, Cmd msg )
@@ -43,6 +42,11 @@ init _ =
       }
     , Cmd.none
     )
+
+
+blocksPerPage : List Int
+blocksPerPage =
+    [ 8, 7, 6, 5, 4, 3, 2, 1 ]
 
 
 
@@ -109,7 +113,7 @@ view : Model -> H.Html Msg
 view model =
     let
         header =
-            H.h1 [] [ H.text "Infinite scrolling throttled" ]
+            H.h1 [] [ H.text "Infinite Scroll Throttled" ]
 
         blocks =
             List.reverse model.blocks
@@ -119,6 +123,19 @@ view model =
         , onScroll Scrolled
         ]
         (header :: List.map viewBlock blocks)
+
+
+onScroll : (ScrollEvent -> msg) -> H.Attribute msg
+onScroll toMsg =
+    let
+        scrollEventDecoder =
+            JD.field "target" <|
+                JD.map3 ScrollEvent
+                    (JD.field "scrollHeight" JD.int)
+                    (JD.field "scrollTop" JD.int)
+                    (JD.field "clientHeight" JD.int)
+    in
+    HE.on "scroll" (JD.map toMsg scrollEventDecoder)
 
 
 viewBlock : Int -> H.Html msg
@@ -135,27 +152,3 @@ viewBlock n =
         ]
         [ H.text <| "Block " ++ name
         ]
-
-
-
--- HELPERS
-
-
-type alias ScrollEvent =
-    { sceneHeight : Int
-    , viewportY : Int
-    , viewportHeight : Int
-    }
-
-
-onScroll : (ScrollEvent -> msg) -> H.Attribute msg
-onScroll toMsg =
-    let
-        scrollEventDecoder =
-            JD.field "target" <|
-                JD.map3 ScrollEvent
-                    (JD.field "scrollHeight" JD.int)
-                    (JD.field "scrollTop" JD.int)
-                    (JD.field "clientHeight" JD.int)
-    in
-    HE.on "scroll" (JD.map toMsg scrollEventDecoder)

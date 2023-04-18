@@ -1,8 +1,5 @@
 port module DocumentInfiniteScroll exposing (main)
 
--- This example is based on
--- https://css-tricks.com/debouncing-throttling-explained-examples/#aa-infinite-scrolling.
-
 import Browser as B
 import Debouncer exposing (Debouncer)
 import Html as H
@@ -31,9 +28,11 @@ type alias Model =
     }
 
 
-blocksPerPage : List Int
-blocksPerPage =
-    [ 8, 7, 6, 5, 4, 3, 2, 1 ]
+type alias ScrollEvent =
+    { sceneHeight : Int
+    , viewportY : Int
+    , viewportHeight : Int
+    }
 
 
 init : () -> ( Model, Cmd msg )
@@ -43,6 +42,11 @@ init _ =
       }
     , Cmd.none
     )
+
+
+blocksPerPage : List Int
+blocksPerPage =
+    [ 8, 7, 6, 5, 4, 3, 2, 1 ]
 
 
 
@@ -108,6 +112,14 @@ debouncerConfig =
         }
 
 
+scrollEventDecoder : JD.Decoder ScrollEvent
+scrollEventDecoder =
+    JD.map3 ScrollEvent
+        (JD.field "sceneHeight" JD.int)
+        (JD.field "viewportY" JD.int)
+        (JD.field "viewportHeight" JD.int)
+
+
 
 -- PORTS
 
@@ -132,7 +144,7 @@ view : Model -> H.Html Msg
 view model =
     let
         header =
-            H.h1 [] [ H.text "Infinite scrolling throttled" ]
+            H.h1 [] [ H.text "Document Infinite Scroll Throttled" ]
 
         blocks =
             List.reverse model.blocks
@@ -155,22 +167,3 @@ viewBlock n =
         ]
         [ H.text <| "Block " ++ name
         ]
-
-
-
--- HELPERS
-
-
-type alias ScrollEvent =
-    { sceneHeight : Int
-    , viewportY : Int
-    , viewportHeight : Int
-    }
-
-
-scrollEventDecoder : JD.Decoder ScrollEvent
-scrollEventDecoder =
-    JD.map3 ScrollEvent
-        (JD.field "sceneHeight" JD.int)
-        (JD.field "viewportY" JD.int)
-        (JD.field "viewportHeight" JD.int)
