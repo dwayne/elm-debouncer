@@ -1,8 +1,5 @@
 module Counter exposing (main)
 
--- This example is based on
--- https://discourse.elm-lang.org/t/how-to-do-debouncing/8637.
-
 import Browser as B
 import Debouncer exposing (Debouncer)
 import Html as H
@@ -106,7 +103,7 @@ update msg model =
 incrDConfig : Debouncer.Config () Msg
 incrDConfig =
     Debouncer.leading
-        { wait = 1000
+        { wait = 5000
         , onReady = always ReadyToIncrement
         , onChange = ChangedIncrD
         }
