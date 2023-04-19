@@ -5,6 +5,7 @@ pkgs.mkShell {
   packages = [
     pkgs.caddy
     pkgs.elmPackages.elm
+    pkgs.elmPackages.elm-doc-preview
     pkgs.elmPackages.elm-format
     pkgs.nodejs-18_x
   ];
