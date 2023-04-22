@@ -10,7 +10,7 @@ The best way to understand the utility of this package is to
 
 ## Usage
 
-It takes 7 simple steps. See the annotated
+Simply follow 7 easy steps as described in the annotated
 [resize example](https://dwayne.github.io/elm-debouncer/resize.html) below.
 
 ```elm
@@ -21,7 +21,7 @@ import Browser.Events as BE
 --
 -- STEP 1:
 --
--- Import the package.
+-- Import the module.
 --
 import Debouncer exposing (Debouncer)
 
@@ -130,7 +130,7 @@ update msg model =
 --
 -- STEP 7:
 --
--- Perform the action you've been delaying.
+-- Finally, perform the action you've been delaying.
 --
         ReadyToUseSize event ->
             ( { model | debounced = event :: model.debounced }
@@ -184,4 +184,4 @@ viewEvent { width, height } =
 
 - [Debouncing and Throttling Explained Through Examples](https://css-tricks.com/debouncing-throttling-explained-examples/)
 - Lodash's [debounce](https://lodash.com/docs/4.17.15#debounce) and
-[throttle](https://lodash.com/docs/4.17.15#throttle)
+[throttle](https://lodash.com/docs/4.17.15#throttle) functions

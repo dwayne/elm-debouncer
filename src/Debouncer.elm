@@ -105,6 +105,10 @@ Suppose `wait = 400ms`, then you can expect the following behaviour:
 
 **Note:** Each `-` represents `100ms`.
 
+Play with the
+[trailing edge demo](https://dwayne.github.io/elm-debouncer/trailingDemo.html)
+to better understand how this configuration really works.
+
 -}
 trailing : SimpleConfigOptions a msg -> Config a msg
 trailing { wait, onReady, onChange } =
@@ -128,6 +132,10 @@ Suppose `wait = 400ms`, then you can expect the following behaviour:
 ```
 
 **Note:** Each `-` represents `100ms`.
+
+Play with the
+[leading edge demo](https://dwayne.github.io/elm-debouncer/leadingDemo.html)
+to better understand how this configuration really works.
 
 -}
 leading : SimpleConfigOptions a msg -> Config a msg
@@ -153,6 +161,10 @@ Suppose `wait = 400ms`, then you can expect the following behaviour:
 
 **Note:** Each `-` represents `100ms`.
 
+Play with the
+[throttle demo](https://dwayne.github.io/elm-debouncer/throttleDemo.html)
+to better understand how this configuration really works.
+
 -}
 throttle : SimpleConfigOptions a msg -> Config a msg
 throttle { wait, onReady, onChange } =
@@ -177,8 +189,11 @@ constructor.
     that represents the maximum number of milliseconds to delay. Once that time is
     up the `onReady` constructed message is sent.
 
-**Note:** `wait`, `onReady`, and `onChange` are the same as in
+**Note 1:** `wait`, `onReady`, and `onChange` are the same as in
 [`SimpleConfigOptions`](#SimpleConfigOptions).
+
+**Note 2:** The custom configuration options were heavily influenced by Lodash's
+[debounce](https://lodash.com/docs/4.17.15#debounce) function.
 
 -}
 type alias CustomConfigOptions a msg =

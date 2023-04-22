@@ -60,7 +60,16 @@ config =
     , NoUnused.Dependencies.rule
     , NoUnused.Exports.rule
         |> Rule.ignoreErrorsForFiles
-            [ "src/Debouncer.elm"
+            [ "examples/src/Counter.elm"
+            , "examples/src/DocumentInfiniteScroll.elm"
+            , "examples/src/HttpInput.elm"
+            , "examples/src/InfiniteScroll.elm"
+            , "examples/src/LeadingDemo.elm"
+            , "examples/src/RedNotices.elm"
+            , "examples/src/RegistrationForm.elm"
+            , "examples/src/Resize.elm"
+            , "examples/src/ThrottleDemo.elm"
+            , "examples/src/TrailingDemo.elm"
             ]
     , NoUnused.Parameters.rule
     , NoUnused.Patterns.rule
