@@ -1,1 +1,141 @@
-Hello, world!
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>elm-debouncer Examples</title>
+
+    <style>
+      body {
+        max-width: 40em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1><a href="https://github.com/dwayne/elm-debouncer" target="_blank">elm-debouncer</a> Examples</h1>
+
+    <p>These examples, which come from a variety of sources, are meant to
+    illustrate the versatility of the library in helping you to solve typical
+    web application development challenges.</p>
+
+    <ul>
+      <li>
+        <a href="#trailingEdge">Trailing Edge</a>
+        <ul>
+          <li><a href="#resize">Resize</a></li>
+          <li><a href="#httpInput">HTTP Input</a></li>
+          <li><a href="#registrationForm">Registration Form</a></li>
+          <li><a href="#redNotices">Red Notices</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="#leadingEdge">Leading Edge</a>
+        <ul>
+          <li><a href="#counter">Counter</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="#throttle">Throttle</a>
+        <ul>
+          <li><a href="#infiniteScroll">Infinite Scroll</a></li>
+          <li><a href="#documentInfiniteScroll">Document Infinite Scroll</a></li>
+        </ul>
+      </li>
+    </ul>
+
+    <h2 id="trailingEdge">Trailing Edge</h2>
+
+    <p>Have a look at the <a href="/elm-debouncer/trailingDemo.html">trailing edge demo</a>.</p>
+
+    <p><strong>Source:</strong> <a href="https://css-tricks.com/debouncing-throttling-explained-examples/#aa-debounce" target="_blank">https://css-tricks.com/debouncing-throttling-explained-examples/#aa-debounce</a></p>
+
+    <h3 id="resize">Resize</h3>
+
+    <p>Many <em>resize</em> events are emitted when resizing a (desktop)
+    browser window. However, we can use a trailing edge debouncer to perform
+    an action once the user stops resizing the browser since we are usually only
+    interested in the final size of the window.</p>
+
+    <p>Have a look at the <a href="/elm-debouncer/resize.html">resize example</a>.</p>
+
+    <p><strong>Source:</strong> <a href="https://css-tricks.com/debouncing-throttling-explained-examples/#aa-resize-example" target="_blank">https://css-tricks.com/debouncing-throttling-explained-examples/#aa-resize-example</a></p>
+
+    <h3 id="httpInput">HTTP Input</h3>
+
+    <p>Why send HTTP requests to the server, every 50ms, when the user is still
+    typing? A trailing edge debouncer can help us avoid making too many server
+    requests by only sending a request when the user stops typing.</p>
+
+    <p>Have a look at the <a href="/elm-debouncer/httpInput.html">HTTP input example</a>.</p>
+
+    <p><strong>Source:</strong> <a href="https://css-tricks.com/debouncing-throttling-explained-examples/#aa-keypress-on-autocomplete-form-with-ajax-request" target="_blank">https://css-tricks.com/debouncing-throttling-explained-examples/#aa-keypress-on-autocomplete-form-with-ajax-request</a></p>
+
+    <h3 id="registrationForm">Registration Form</h3>
+
+    <p>It illustrates asynchronous and debounced validation. A user can enter
+    their username and 500ms after the user stops typing a validation request
+    is sent to a server to check if the username is free. If the user starts
+    typing again then the previous validation request is cancelled.</p>
+
+    <p>Have a look at the <a href="/elm-debouncer/registrationForm.html">registration form example</a>.</p>
+
+    <p><strong>Source:</strong> <a href="https://github.com/Orasund/elm-cookbook/issues/1#issue-456089065" target="_blank">https://github.com/Orasund/elm-cookbook/issues/1#issue-456089065</a></p>
+
+    <h3 id="redNotices">Red Notices</h3>
+
+    <p>Search the <a href="https://interpol.api.bund.dev/" target="_blank">Interpol Red Notices API</a>
+    and debounce the input to make it feel smooth and reduce network
+    requests.</p>
+
+    <p>Have a look at the <a href="/elm-debouncer/redNotices.html">red notices example</a>.</p>
+
+    <p><strong>Source:</strong> <a href="https://youtu.be/PySFIsgXNZ0" target="_blank">https://youtu.be/PySFIsgXNZ0</a></p>
+
+    <h2 id="leadingEdge">Leading Edge</h2>
+
+    <p>Have a look at the <a href="/elm-debouncer/leadingDemo.html">leading edge
+    demo</a>.</p>
+
+    <p><strong>Source:</strong> <a href="https://css-tricks.com/debouncing-throttling-explained-examples/#aa-leading-edge-or-immediate" target="_blank">https://css-tricks.com/debouncing-throttling-explained-examples/#aa-leading-edge-or-immediate</a></p>
+
+    <h3 id="counter">Counter</h3>
+
+    <p>If a user has hand tremors then when they attempt to click a button they
+    may unintentionally press it multiple times in quick succession. We want
+    their first click to yield an immediate response but subsequent clicks to be
+    ignored until a certain amount of time has passed since they last clicked
+    the button.</p>
+
+    <p>Have a look at the <a href="/elm-debouncer/counter.html">counter example</a>.</p>
+
+    <p><strong>Source:</strong> <a href="https://discourse.elm-lang.org/t/how-to-do-debouncing/8637" target="_blank">https://discourse.elm-lang.org/t/how-to-do-debouncing/8637</a></p>
+
+    <h2 id="throttle">Throttle</h2>
+
+    <p>Have a look at the <a href="/elm-debouncer/throttleDemo.html">throttle
+    demo</a>.</p>
+
+    <h3 id="infiniteScroll">Infinite Scroll</h3>
+
+    <p>As the user scrolls we check how far they are from the bottom of the
+    page. If they are near the bottom then we load more content and append it
+    to the page. It gives the illusion of an infinitely long page.</p>
+
+    <p>Have a look at the <a href="/elm-debouncer/infiniteScroll.html">infinite scroll example</a>.</p>
+
+    <p><strong>Source:</strong> <a href="https://css-tricks.com/debouncing-throttling-explained-examples/#aa-infinite-scrolling" target="_blank">https://css-tricks.com/debouncing-throttling-explained-examples/#aa-infinite-scrolling</a></p>
+
+    <h3 id="documentInfiniteScroll">Document Infinite Scroll</h3>
+
+    <p>This example is similar to the infinite scroll example above, but,
+    instead of handling the scroll events on an
+    <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/scroll_event" target="_blank">element</a>
+    we use a port to manage the scroll events on the
+    <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/scroll_event" target="_blank">document</a>.</p>
+
+    <p>Have a look at the <a href="/elm-debouncer/documentInfiniteScroll.html">document infinite scroll example</a>.</p>
+
+    <p><strong>Source:</strong> <a href="https://css-tricks.com/debouncing-throttling-explained-examples/#aa-infinite-scrolling" target="_blank">https://css-tricks.com/debouncing-throttling-explained-examples/#aa-infinite-scrolling</a></p>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Leading Demo</title>
+    <link rel="stylesheet" href="/elm-debouncer/demo.css">
+    <style>
+      body {
+        margin: 0;
+        padding: 20px 10px;
+
+        background: #444;
+        color: #fff;
+      }
+
+      .content {
+        margin: 0 auto;
+        width: 700px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="leadingDemo"></div>
+    <script src="/elm-debouncer/leadingDemo.js"></script>
+    <script>
+      Elm.LeadingDemo.init({
+        node: document.getElementById("leadingDemo")
+      });
+    </script>
+  </body>
+</html>
