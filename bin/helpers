@@ -1,0 +1,68 @@
+#!/usr/bin/env
+
+set -e
+
+src_dir="$project/examples"
+web_root="${web_root%/}"
+dest_dir="$build$web_root"
+
+prepare_dest_dir () {
+  mkdir -p "$dest_dir"
+}
+
+build_html () {
+  local name
+
+  for html_file in "$src_dir"/html/*.html; do
+    name=${html_file##/*/}
+    sed "s|{{ROOT}}|$web_root|" "$html_file" > "$dest_dir/$name"
+  done
+}
+
+build_css () {
+  cp "$src_dir"/css/*.css "$dest_dir"
+}
+
+build_js () {
+  local name
+
+  pushd "$src_dir"
+
+  for elm_file in src/*.elm; do
+    name="${elm_file#src/}" # Remove src/ prefix
+    name="${name%.elm}"     # Remove .elm suffix
+    name="${name,}"         # Convert the first character to lowercase
+
+    elm make "$elm_file" --debug --output "$dest_dir/$name.js"
+  done
+
+  popd
+}
+
+deploy_gh_pages () {
+  local branch="gh-pages"
+
+  if git rev-parse --verify "$branch^{commit}" &> /dev/null; then
+    echo "Deploying..."
+
+    local tmp_dir=$(mktemp -d)
+    echo "$tmp_dir"
+
+    git worktree add "$tmp_dir" "$branch"
+    cp -r "$dest_dir"/* "$tmp_dir"
+    git -C "$tmp_dir" add .
+
+    local hash="$(git log -n 1 --format='%h' master)"
+    local message="Site updated to $hash"
+
+    if git -C "$tmp_dir" commit -m "$message"; then
+      git -C "$tmp_dir" push -u origin HEAD
+    fi
+
+    git worktree remove --force "$tmp_dir"
+
+    echo "Deployed!"
+  else
+    error "Please create a branch named \"$branch\" in order to deploy."
+  fi
+}

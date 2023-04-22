@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+web_root=/elm-debouncer
+
+. helpers && \
+  prepare_dest_dir && build_html && build_css && build_js && \
+  deploy_gh_pages
